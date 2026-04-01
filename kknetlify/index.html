@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  >
+  <title>KKCalculator AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="kkc-bg"></div>
+
+  <main class="kkc-card">
+    <header class="kkc-header">
+      <p class="kkc-eyebrow">Calculadora inteligente</p>
+      <h1 class="kkc-title">KKCalculator AI</h1>
+      <p class="kkc-subtitle">Escribe, calcula o escanea un ejercicio con la camara.</p>
+      <div class="kkc-top-row">
+        <div class="kkc-selector" id="kkc-mode-label">Modo auto</div>
+        <button class="kkc-btn kkc-btn-small" id="kkc-editai-btn" type="button">Estado IA</button>
+      </div>
+    </header>
+
+    <section class="kkc-input-section">
+      <label class="kkc-label" for="kkc-input">Pregunta o expresion</label>
+      <input
+        id="kkc-input"
+        class="kkc-input-main"
+        type="text"
+        placeholder="Ej: 25*(8+2) o resuelve 3x + 9 = 18"
+        autocomplete="off"
+      >
+      <div class="kkc-btn-row">
+        <button class="kkc-btn kkc-btn-icon" id="kkc-camera-btn" type="button" title="Abrir camara">Cam</button>
+        <button class="kkc-btn kkc-btn-main" id="kkc-send-btn" type="button">Resolver</button>
+        <button class="kkc-btn kkc-btn-med" id="kkc-clear-btn" type="button">Limpiar</button>
+      </div>
+      <p class="kkc-status" id="kkc-status">Lista para calcular o escanear.</p>
+    </section>
+
+    <section class="kkc-result-section">
+      <div id="kkc-result" class="kkc-result-box">El resultado o la explicacion apareceran aqui.</div>
+    </section>
+
+    <section class="kkc-keyboard-section" aria-label="Teclado de calculadora">
+      <div id="kkc-keyboard" class="kkc-keyboard-grid">
+        <button class="kkc-key" type="button">AC</button>
+        <button class="kkc-key" type="button">DEL</button>
+        <button class="kkc-key" type="button">+/-</button>
+        <button class="kkc-key" type="button">/</button>
+        <button class="kkc-key" type="button">7</button>
+        <button class="kkc-key" type="button">8</button>
+        <button class="kkc-key" type="button">9</button>
+        <button class="kkc-key" type="button">*</button>
+        <button class="kkc-key" type="button">4</button>
+        <button class="kkc-key" type="button">5</button>
+        <button class="kkc-key" type="button">6</button>
+        <button class="kkc-key" type="button">-</button>
+        <button class="kkc-key" type="button">1</button>
+        <button class="kkc-key" type="button">2</button>
+        <button class="kkc-key" type="button">3</button>
+        <button class="kkc-key" type="button">+</button>
+        <button class="kkc-key" type="button">0</button>
+        <button class="kkc-key" type="button">.</button>
+        <button class="kkc-key" type="button">(</button>
+        <button class="kkc-key" type="button">)</button>
+        <button class="kkc-key" type="button">sqrt</button>
+        <button class="kkc-key" type="button">^2</button>
+        <button class="kkc-key" type="button">%</button>
+        <button class="kkc-key kkc-key-equals" type="button">=</button>
+      </div>
+    </section>
+
+    <section class="kkc-history-section">
+      <div class="kkc-history-header">
+        <h2 class="kkc-history-title">Historial</h2>
+        <button class="kkc-btn kkc-btn-small" id="kkc-toggle-history-btn" type="button">Ocultar</button>
+      </div>
+      <div id="kkc-history" class="kkc-history"></div>
+    </section>
+  </main>
+
+  <div id="kkc-camera-modal" class="kkc-camera-modal" hidden>
+    <div class="kkc-camera-panel">
+      <h2 class="kkc-camera-title">Escanear ejercicio</h2>
+      <p class="kkc-camera-copy">Enfoca una operacion o problema escrito y captura la imagen.</p>
+      <video id="kkc-camera-video" autoplay playsinline class="kkc-camera-video"></video>
+      <div class="kkc-btn-row">
+        <button id="kkc-capture-btn" class="kkc-btn kkc-btn-main" type="button">Capturar</button>
+        <button id="kkc-switchcam-btn" class="kkc-btn kkc-btn-med" type="button">Cambiar</button>
+        <button id="kkc-closecam-btn" class="kkc-btn kkc-btn-med" type="button">Cerrar</button>
+      </div>
+      <canvas id="kkc-canvas" hidden></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
