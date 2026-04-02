@@ -466,6 +466,44 @@ body::after {
   line-height: 1.55;
 }
 
+.kkc-camera-stage {
+  position: relative;
+  margin-top: 12px;
+}
+
+.kkc-camera-guide {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.kkc-camera-guide-box {
+  width: min(82%, 290px);
+  height: 34%;
+  border-radius: 22px;
+  border: 2px solid rgba(124, 243, 208, 0.92);
+  box-shadow:
+    0 0 0 999px rgba(5, 11, 16, 0.34),
+    0 0 0 6px rgba(124, 243, 208, 0.08),
+    0 12px 28px rgba(0, 0, 0, 0.24);
+  background: rgba(124, 243, 208, 0.04);
+}
+
+.kkc-camera-guide-label {
+  position: absolute;
+  bottom: 18px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(5, 11, 16, 0.72);
+  border: 1px solid rgba(124, 243, 208, 0.22);
+  color: #dffdf4;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
 .kkc-camera-video {
   width: 100%;
   margin-top: 12px;
@@ -514,4 +552,5 @@ body::after {
     min-height: 56px;
   }
 }
+
 

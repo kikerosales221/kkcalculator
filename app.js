@@ -302,10 +302,15 @@ async function captureAndRead() {
     return;
   }
 
-  canvas.width = width;
-  canvas.height = height;
+  const cropWidth = Math.floor(width * 0.82);
+  const cropHeight = Math.floor(height * 0.34);
+  const cropX = Math.floor((width - cropWidth) / 2);
+  const cropY = Math.floor((height - cropHeight) / 2.5);
+
+  canvas.width = cropWidth;
+  canvas.height = cropHeight;
   const context = canvas.getContext("2d", { willReadFrequently: true });
-  context.drawImage(cameraVideo, 0, 0, width, height);
+  context.drawImage(cameraVideo, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
   setResult("Procesando texto de la imagen...");
   setStatus("Mejorando la imagen y ejecutando OCR.");
@@ -460,6 +465,7 @@ input.addEventListener("keydown", (event) => {
 
 window.addEventListener("beforeunload", stopCamera);
 updateModeLabel("");
+
 
 
 
