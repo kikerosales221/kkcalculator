@@ -22,10 +22,42 @@ const canvas = document.getElementById("kkc-canvas");
 const AI_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/ask";
 const AI_HEALTH_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/health";
 const MAX_HISTORY = 8;
+const ADMIN_TOKEN_STORAGE_KEY = "kkc_admin_token";
+const ADMIN_QUERY_PARAM = "kkc_admin";
 
 let cameraStream = null;
 let usingBackCamera = true;
 let historyItems = [];
+
+function getAdminToken() {
+  try {
+    const url = new URL(window.location.href);
+    const queryToken = url.searchParams.get(ADMIN_QUERY_PARAM);
+
+    if (queryToken) {
+      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, queryToken.trim());
+      url.searchParams.delete(ADMIN_QUERY_PARAM);
+      window.history.replaceState({}, "", url.toString());
+      return queryToken.trim();
+    }
+
+    return localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+const ADMIN_TOKEN = getAdminToken();
+
+function buildAiHeaders() {
+  const headers = { "Content-Type": "application/json" };
+
+  if (ADMIN_TOKEN) {
+    headers["x-kkc-admin-token"] = ADMIN_TOKEN;
+  }
+
+  return headers;
+}
 
 function setStatus(message) {
   statusText.textContent = message;
@@ -107,7 +139,9 @@ function explainAiError(data, fallbackMessage) {
     case "invalid_api_key":
       return "La IA no pudo autenticarse con OpenAI. Revisa la API key del backend.";
     case "missing_api_key":
-      return "El backend esta encendido, pero falta configurar OPENAI_API_KEY en kkc-backend/.env.";
+      return "El backend esta encendido, pero falta configurar OPENAI_API_KEY en Render.";
+    case "daily_limit_reached":
+      return `La demo publica ya alcanzo su limite diario de ${data.dailyLimit || 5} consultas de IA.`;
     default:
       return fallbackMessage || "No pude completar la consulta con IA.";
   }
@@ -123,6 +157,7 @@ function optimizeMobileLayout() {
     toggleHistoryBtn.textContent = "Mostrar";
   }
 }
+
 function addHistoryItem(query, answer, source) {
   historyItems.unshift({ query, answer, source });
   historyItems = historyItems.slice(0, MAX_HISTORY);
@@ -172,7 +207,7 @@ async function resolveInput() {
   try {
     const response = await fetch(AI_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAiHeaders(),
       body: JSON.stringify({ prompt: value })
     });
 
@@ -183,13 +218,21 @@ async function resolveInput() {
         status: response.status,
         providerStatus: data.providerStatus,
         details: data.details,
+        dailyLimit: data.dailyLimit,
+        remainingToday: data.remainingToday,
         message: data.error || `HTTP ${response.status}`
       };
     }
 
     const answer = data.answer || "El backend no devolvio respuesta.";
     setResult(answer);
-    setStatus("Respuesta generada por el backend de IA.");
+    setStatus(
+      data.adminBypassActive
+        ? "Respuesta generada por el backend de IA. Modo admin activo."
+        : typeof data.remainingToday === "number"
+          ? `Respuesta generada por IA. Te quedan ${data.remainingToday} consultas hoy.`
+          : "Respuesta generada por el backend de IA."
+    );
     addHistoryItem(value, answer, "Backend IA");
     revealResult();
   } catch (error) {
@@ -197,7 +240,11 @@ async function resolveInput() {
     const explanation = explainAiError(error, error?.details);
 
     setResult(`${explanation} Ayuda local: ${fallback}`);
-    setStatus("La IA no estuvo disponible y se mostro una ayuda local.");
+    setStatus(
+      error?.providerStatus === "daily_limit_reached"
+        ? "Limite diario alcanzado para publico."
+        : "La IA no estuvo disponible y se mostro una ayuda local."
+    );
     addHistoryItem(value, fallback, "Ayuda local");
     revealResult();
   }
@@ -396,7 +443,7 @@ editAiBtn.addEventListener("click", () => {
   setResult("Comprobando el estado del backend de IA...");
   setStatus("Consultando disponibilidad del backend.");
 
-  fetch(AI_HEALTH_ENDPOINT)
+  fetch(AI_HEALTH_ENDPOINT, { headers: ADMIN_TOKEN ? { "x-kkc-admin-token": ADMIN_TOKEN } : {} })
     .then(async (response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -408,8 +455,12 @@ editAiBtn.addEventListener("click", () => {
 
       switch (data.providerStatus) {
         case "configured":
-          statusLine = `Backend listo para consultas. Modelo: ${data.model}. API: ${data.mode}.`;
-          statusCopy = "Backend IA configurado y sin errores recientes.";
+          statusLine = data.adminBypassActive
+            ? `IA lista. Modo admin activo. Modelo: ${data.model}.`
+            : `IA lista. Modelo: ${data.model}. Quedan ${data.remainingToday ?? data.dailyLimit} consultas hoy.`;
+          statusCopy = data.adminBypassActive
+            ? "Tu usuario no tiene limite diario activo."
+            : `Demo publica con limite diario de ${data.dailyLimit} consultas por usuario.`;
           break;
         case "quota_exceeded":
           statusLine = `Backend conectado, pero OpenAI devolvio cuota agotada. Modelo: ${data.model}.`;
@@ -431,10 +482,12 @@ editAiBtn.addEventListener("click", () => {
 
       setResult(statusLine);
       setStatus(statusCopy);
+      revealResult();
     })
     .catch(() => {
-      setResult("No pude conectar con el backend. Inicia kkc-backend en http://localhost:3001 y configura tu archivo .env.");
+      setResult("No pude conectar con el backend publico de IA.");
       setStatus("Backend IA no disponible.");
+      revealResult();
     });
 });
 
@@ -470,10 +523,5 @@ input.addEventListener("keydown", (event) => {
 });
 
 window.addEventListener("beforeunload", stopCamera);
+optimizeMobileLayout();
 updateModeLabel("");
-
-
-
-
-
-
