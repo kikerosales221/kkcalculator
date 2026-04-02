@@ -117,6 +117,12 @@ function updateModeLabel(value) {
   modeLabel.textContent = isMathExpression(value) ? "Modo calculo" : "Modo IA";
 }
 
+function optimizeMobileLayout() {
+  if (window.innerWidth <= 640 && !historyContainer.hasAttribute("hidden")) {
+    historyContainer.setAttribute("hidden", "");
+    toggleHistoryBtn.textContent = "Mostrar";
+  }
+}
 function addHistoryItem(query, answer, source) {
   historyItems.unshift({ query, answer, source });
   historyItems = historyItems.slice(0, MAX_HISTORY);
@@ -465,6 +471,7 @@ input.addEventListener("keydown", (event) => {
 
 window.addEventListener("beforeunload", stopCamera);
 updateModeLabel("");
+
 
 
 

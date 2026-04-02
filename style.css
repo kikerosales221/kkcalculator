@@ -516,41 +516,140 @@ body::after {
 
 @media (max-width: 640px) {
   body {
-    padding: 10px;
+    padding: 8px;
   }
 
   .kkc-card {
     width: 100%;
-    padding: 18px;
-    border-radius: 26px;
+    padding: 14px;
+    border-radius: 22px;
+  }
+
+  .kkc-header {
+    margin-bottom: 14px;
+    padding: 4px 2px 8px;
+  }
+
+  .kkc-eyebrow {
+    margin-bottom: 8px;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
   }
 
   .kkc-title {
     max-width: none;
-    font-size: clamp(1.75rem, 9vw, 2.45rem);
+    font-size: clamp(1.68rem, 8.2vw, 2.2rem);
+  }
+
+  .kkc-subtitle {
+    margin-top: 10px;
+    max-width: 23ch;
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .kkc-top-row {
+    margin-top: 14px;
+    gap: 10px;
+  }
+
+  .kkc-selector,
+  .kkc-btn-small,
+  .kkc-status,
+  .kkc-history-source {
+    font-size: 0.82rem;
   }
 
   .kkc-input-section,
   .kkc-result-section,
   .kkc-history-section {
-    padding: 16px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .kkc-label {
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+  }
+
+  .kkc-input-main {
+    min-height: 58px;
+    padding: 15px 14px;
+    font-size: 1rem;
   }
 
   .kkc-btn-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .kkc-btn-row .kkc-btn {
     width: 100%;
+    min-width: 0;
+    padding: 11px 10px;
+    border-radius: 16px;
+  }
+
+  .kkc-result-box {
+    min-height: 108px;
+    padding: 16px;
+    line-height: 1.55;
+  }
+
+  .kkc-result-box::before {
+    margin-bottom: 10px;
+    font-size: 0.62rem;
   }
 
   .kkc-keyboard-grid {
-    gap: 8px;
+    gap: 7px;
   }
 
   .kkc-key {
-    min-height: 56px;
+    min-height: 50px;
+    border-radius: 16px;
+    font-size: 0.95rem;
+  }
+
+  .kkc-history-title,
+  .kkc-camera-title {
+    font-size: 1.05rem;
+  }
+
+  .kkc-history {
+    min-height: 60px;
+    gap: 8px;
+  }
+
+  .kkc-history:empty {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .kkc-history-item {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .kkc-camera-panel {
+    width: 100%;
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .kkc-camera-copy {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .kkc-camera-guide-box {
+    width: 86%;
+    height: 30%;
+    border-radius: 18px;
+  }
+
+  .kkc-camera-guide-label {
+    bottom: 12px;
+    font-size: 0.76rem;
   }
 }
-
-
