@@ -35,6 +35,10 @@ function setResult(message) {
   result.textContent = message;
 }
 
+function revealResult() {
+  result.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 function normalizeExpression(rawExpression) {
   return rawExpression
     .replace(/,/g, ".")
@@ -148,6 +152,7 @@ async function resolveInput() {
       setResult(`Resultado: ${answer}`);
       setStatus("Operacion resuelta localmente.");
       addHistoryItem(value, `Resultado: ${answer}`, "Calculo local");
+      revealResult();
     } catch (error) {
       setResult("No pude evaluar esa expresion. Revisa parentesis y operadores.");
       setStatus("La expresion necesita correccion.");
@@ -180,6 +185,7 @@ async function resolveInput() {
     setResult(answer);
     setStatus("Respuesta generada por el backend de IA.");
     addHistoryItem(value, answer, "Backend IA");
+    revealResult();
   } catch (error) {
     const fallback = buildLocalExplanation(value);
     const explanation = explainAiError(error, error?.details);
@@ -187,6 +193,7 @@ async function resolveInput() {
     setResult(`${explanation} Ayuda local: ${fallback}`);
     setStatus("La IA no estuvo disponible y se mostro una ayuda local.");
     addHistoryItem(value, fallback, "Ayuda local");
+    revealResult();
   }
 }
 
@@ -220,6 +227,67 @@ function stopCamera() {
   cameraVideo.srcObject = null;
 }
 
+function normalizeOcrText(rawText) {
+  return rawText
+    .replace(/[\r\n]+/g, " ")
+    .replace(/[|]/g, "/")
+    .replace(/[xX×]/g, "*")
+    .replace(/[–—]/g, "-")
+    .replace(/[÷]/g, "/")
+    .replace(/\s*([+\-*/=()%^])\s*/g, " $1 ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function createOcrVariants(sourceCanvas) {
+  const variants = [sourceCanvas.toDataURL("image/png")];
+  const width = sourceCanvas.width;
+  const height = sourceCanvas.height;
+  const processedCanvas = document.createElement("canvas");
+  processedCanvas.width = width;
+  processedCanvas.height = height;
+  const processedContext = processedCanvas.getContext("2d", { willReadFrequently: true });
+
+  processedContext.drawImage(sourceCanvas, 0, 0, width, height);
+  const imageData = processedContext.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = Math.round(data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+    const boosted = gray > 155 ? 255 : gray < 95 ? 0 : gray;
+    data[i] = boosted;
+    data[i + 1] = boosted;
+    data[i + 2] = boosted;
+  }
+
+  processedContext.putImageData(imageData, 0, 0);
+  variants.push(processedCanvas.toDataURL("image/png"));
+  return variants;
+}
+
+async function readMathFromCanvas(sourceCanvas) {
+  const variants = createOcrVariants(sourceCanvas);
+  let bestText = "";
+
+  for (const imageData of variants) {
+    const ocr = await Tesseract.recognize(imageData, "spa+eng", {
+      tessedit_pageseg_mode: "6",
+      tessedit_char_whitelist: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=().,%^ xX÷×v"
+    });
+
+    const text = normalizeOcrText(ocr.data.text || "");
+    if (text.length > bestText.length) {
+      bestText = text;
+    }
+
+    if (/[0-9][0-9+\-*/=().,%^ ]+/.test(text)) {
+      return text;
+    }
+  }
+
+  return bestText;
+}
+
 async function captureAndRead() {
   if (!cameraStream) {
     setStatus("La camara aun no esta activa.");
@@ -236,15 +304,14 @@ async function captureAndRead() {
 
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext("2d").drawImage(cameraVideo, 0, 0, width, height);
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  context.drawImage(cameraVideo, 0, 0, width, height);
 
   setResult("Procesando texto de la imagen...");
-  setStatus("Ejecutando OCR con Tesseract.");
+  setStatus("Mejorando la imagen y ejecutando OCR.");
 
   try {
-    const imageData = canvas.toDataURL("image/png");
-    const ocr = await Tesseract.recognize(imageData, "spa+eng");
-    const text = ocr.data.text.replace(/\s+/g, " ").trim();
+    const text = await readMathFromCanvas(canvas);
 
     if (!text) {
       throw new Error("No se detecto texto");
@@ -253,12 +320,13 @@ async function captureAndRead() {
     input.value = text;
     updateModeLabel(text);
     setStatus("Texto detectado desde la camara.");
+    revealResult();
     addHistoryItem("Escaneo", text, "OCR");
     cameraModal.hidden = true;
     stopCamera();
     await resolveInput();
   } catch (error) {
-    setResult("No pude leer la imagen. Intenta con mejor luz o mas enfoque.");
+    setResult("No pude leer bien la imagen. Intenta acercarte mas, usar buena luz y enfocar solo el ejercicio.");
     setStatus("El OCR no encontro un ejercicio legible.");
   }
 }
@@ -392,3 +460,6 @@ input.addEventListener("keydown", (event) => {
 
 window.addEventListener("beforeunload", stopCamera);
 updateModeLabel("");
+
+
+
