@@ -19,8 +19,8 @@ const closeCamBtn = document.getElementById("kkc-closecam-btn");
 const switchCamBtn = document.getElementById("kkc-switchcam-btn");
 const canvas = document.getElementById("kkc-canvas");
 
-const AI_ENDPOINT = "http://localhost:3001/api/ask";
-const AI_HEALTH_ENDPOINT = "http://localhost:3001/api/health";
+const AI_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/ask";
+const AI_HEALTH_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/health";
 const MAX_HISTORY = 8;
 
 let cameraStream = null;
@@ -471,6 +471,7 @@ input.addEventListener("keydown", (event) => {
 
 window.addEventListener("beforeunload", stopCamera);
 updateModeLabel("");
+
 
 
 
