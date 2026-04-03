@@ -323,7 +323,7 @@ body::after {
 }
 
 .kkc-result-box::before {
-  content: "Live output";
+  content: attr(data-live-label);
   display: inline-flex;
   margin-bottom: 14px;
   padding: 6px 10px;
@@ -405,7 +405,7 @@ body::after {
 }
 
 .kkc-history:empty::before {
-  content: "Tus operaciones y respuestas recientes apareceran aqui.";
+  content: attr(data-empty);
   display: block;
   color: var(--muted);
   line-height: 1.6;
@@ -679,3 +679,4 @@ body::after {
     font-size: 0.72rem;
   }
 }
+

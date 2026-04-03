@@ -14,22 +14,25 @@
 
   <main class="kkc-card">
     <header class="kkc-header">
-      <p class="kkc-eyebrow">Calculadora inteligente</p>
+      <p class="kkc-eyebrow" id="kkc-eyebrow">Asistente inteligente</p>
       <h1 class="kkc-title">KKCalculator AI</h1>
-      <p class="kkc-subtitle">Escribe, calcula o escanea un ejercicio con la camara.</p>
+      <p class="kkc-subtitle" id="kkc-subtitle">Calcula, captura texto y resuelve dudas rapidas para estudio, trabajo o uso diario.</p>
       <div class="kkc-top-row">
         <div class="kkc-selector" id="kkc-mode-label">Modo auto</div>
-        <button class="kkc-btn kkc-btn-small" id="kkc-editai-btn" type="button">Estado IA</button>
+        <div class="kkc-top-actions">
+          <button class="kkc-btn kkc-btn-small kkc-btn-ghost" id="kkc-lang-btn" type="button">EN</button>
+          <button class="kkc-btn kkc-btn-small" id="kkc-editai-btn" type="button">Estado IA</button>
+        </div>
       </div>
     </header>
 
     <section class="kkc-input-section">
-      <label class="kkc-label" for="kkc-input">Pregunta o expresion</label>
+      <label class="kkc-label" id="kkc-input-label" for="kkc-input">Pregunta, texto o expresion</label>
       <input
         id="kkc-input"
         class="kkc-input-main"
         type="text"
-        placeholder="Ej: 25*(8+2) o resuelve 3x + 9 = 18"
+        placeholder="Ej: 25*(8+2), resume este texto o explica una fraccion"
         autocomplete="off"
       >
       <div class="kkc-btn-row">
@@ -37,56 +40,56 @@
         <button class="kkc-btn kkc-btn-main" id="kkc-send-btn" type="button">Resolver</button>
         <button class="kkc-btn kkc-btn-med" id="kkc-clear-btn" type="button">Limpiar</button>
       </div>
-      <p class="kkc-status" id="kkc-status">Lista para calcular o escanear.</p>
+      <p class="kkc-status" id="kkc-status">Lista para calcular, leer texto o ayudarte con una duda.</p>
     </section>
 
     <section class="kkc-result-section">
-      <div id="kkc-result" class="kkc-result-box">El resultado o la explicacion apareceran aqui.</div>
+      <div id="kkc-result" class="kkc-result-box" data-live-label="Live output">Aqui veras resultados, explicaciones breves o texto detectado.</div>
     </section>
 
-    <section class="kkc-keyboard-section" aria-label="Teclado de calculadora">
+    <section class="kkc-keyboard-section" id="kkc-keyboard-section" aria-label="Teclado de calculadora">
       <div id="kkc-keyboard" class="kkc-keyboard-grid">
-        <button class="kkc-key" type="button">AC</button>
-        <button class="kkc-key" type="button">DEL</button>
-        <button class="kkc-key" type="button">+/-</button>
-        <button class="kkc-key" type="button">/</button>
-        <button class="kkc-key" type="button">7</button>
-        <button class="kkc-key" type="button">8</button>
-        <button class="kkc-key" type="button">9</button>
-        <button class="kkc-key" type="button">*</button>
-        <button class="kkc-key" type="button">4</button>
-        <button class="kkc-key" type="button">5</button>
-        <button class="kkc-key" type="button">6</button>
-        <button class="kkc-key" type="button">-</button>
-        <button class="kkc-key" type="button">1</button>
-        <button class="kkc-key" type="button">2</button>
-        <button class="kkc-key" type="button">3</button>
-        <button class="kkc-key" type="button">+</button>
-        <button class="kkc-key" type="button">0</button>
-        <button class="kkc-key" type="button">.</button>
-        <button class="kkc-key" type="button">(</button>
-        <button class="kkc-key" type="button">)</button>
-        <button class="kkc-key" type="button">sqrt</button>
-        <button class="kkc-key" type="button">^2</button>
-        <button class="kkc-key" type="button">%</button>
-        <button class="kkc-key kkc-key-equals" type="button">=</button>
+        <button class="kkc-key" type="button" data-key="AC">AC</button>
+        <button class="kkc-key" type="button" data-key="DEL">DEL</button>
+        <button class="kkc-key" type="button" data-key="+/-">+/-</button>
+        <button class="kkc-key" type="button" data-key="/">/</button>
+        <button class="kkc-key" type="button" data-key="7">7</button>
+        <button class="kkc-key" type="button" data-key="8">8</button>
+        <button class="kkc-key" type="button" data-key="9">9</button>
+        <button class="kkc-key" type="button" data-key="*">*</button>
+        <button class="kkc-key" type="button" data-key="4">4</button>
+        <button class="kkc-key" type="button" data-key="5">5</button>
+        <button class="kkc-key" type="button" data-key="6">6</button>
+        <button class="kkc-key" type="button" data-key="-">-</button>
+        <button class="kkc-key" type="button" data-key="1">1</button>
+        <button class="kkc-key" type="button" data-key="2">2</button>
+        <button class="kkc-key" type="button" data-key="3">3</button>
+        <button class="kkc-key" type="button" data-key="+">+</button>
+        <button class="kkc-key" type="button" data-key="0">0</button>
+        <button class="kkc-key" type="button" data-key=".">.</button>
+        <button class="kkc-key" type="button" data-key="(">(</button>
+        <button class="kkc-key" type="button" data-key=")">)</button>
+        <button class="kkc-key" type="button" data-key="sqrt">sqrt</button>
+        <button class="kkc-key" type="button" data-key="^2">^2</button>
+        <button class="kkc-key" type="button" data-key="%">%</button>
+        <button class="kkc-key kkc-key-equals" type="button" data-key="=">=</button>
       </div>
     </section>
 
     <section class="kkc-history-section">
       <div class="kkc-history-header">
-        <h2 class="kkc-history-title">Historial</h2>
+        <h2 class="kkc-history-title" id="kkc-history-title">Historial</h2>
         <button class="kkc-btn kkc-btn-small" id="kkc-toggle-history-btn" type="button">Ocultar</button>
       </div>
-      <div id="kkc-history" class="kkc-history"></div>
+      <div id="kkc-history" class="kkc-history" data-empty="Tus operaciones y respuestas recientes apareceran aqui."></div>
     </section>
   </main>
 
   <div id="kkc-camera-modal" class="kkc-camera-modal" hidden>
     <div class="kkc-camera-panel">
-      <h2 class="kkc-camera-title">Escanear ejercicio</h2>
-      <p class="kkc-camera-copy">Enfoca una operacion o problema escrito y captura la imagen.</p>
-      <div class="kkc-camera-stage"><video id="kkc-camera-video" autoplay playsinline class="kkc-camera-video"></video><div class="kkc-camera-guide" aria-hidden="true"><div class="kkc-camera-guide-box"></div><p class="kkc-camera-guide-label">Coloca aqui la operacion</p></div></div>
+      <h2 class="kkc-camera-title" id="kkc-camera-title">Capturar texto o operacion</h2>
+      <p class="kkc-camera-copy" id="kkc-camera-copy">Enfoca una nota, una operacion o una pregunta corta y captura la parte importante.</p>
+      <div class="kkc-camera-stage"><video id="kkc-camera-video" autoplay playsinline class="kkc-camera-video"></video><div class="kkc-camera-guide" aria-hidden="true"><div class="kkc-camera-guide-box"></div><p class="kkc-camera-guide-label" id="kkc-camera-guide-label">Coloca aqui el texto o la operacion</p></div></div>
       <div class="kkc-btn-row">
         <button id="kkc-capture-btn" class="kkc-btn kkc-btn-main" type="button">Capturar</button>
         <button id="kkc-switchcam-btn" class="kkc-btn kkc-btn-med" type="button">Cambiar</button>
@@ -100,4 +103,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-

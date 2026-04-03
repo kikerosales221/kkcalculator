@@ -9,8 +9,17 @@ const sendBtn = document.getElementById("kkc-send-btn");
 const clearBtn = document.getElementById("kkc-clear-btn");
 const editAiBtn = document.getElementById("kkc-editai-btn");
 const keyboard = document.getElementById("kkc-keyboard");
+const keyboardSection = document.getElementById("kkc-keyboard-section");
 const historyContainer = document.getElementById("kkc-history");
+const historyTitle = document.getElementById("kkc-history-title");
 const toggleHistoryBtn = document.getElementById("kkc-toggle-history-btn");
+const eyebrow = document.getElementById("kkc-eyebrow");
+const subtitle = document.getElementById("kkc-subtitle");
+const inputLabel = document.getElementById("kkc-input-label");
+const langBtn = document.getElementById("kkc-lang-btn");
+const cameraTitle = document.getElementById("kkc-camera-title");
+const cameraCopy = document.getElementById("kkc-camera-copy");
+const cameraGuideLabel = document.getElementById("kkc-camera-guide-label");
 
 const cameraModal = document.getElementById("kkc-camera-modal");
 const cameraVideo = document.getElementById("kkc-camera-video");
@@ -24,10 +33,190 @@ const AI_HEALTH_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/health
 const MAX_HISTORY = 8;
 const ADMIN_TOKEN_STORAGE_KEY = "kkc_admin_token";
 const ADMIN_QUERY_PARAM = "kkc_admin";
+const LANG_STORAGE_KEY = "kkc_lang";
+
+const translations = {
+  es: {
+    langButton: "EN",
+    eyebrow: "Asistente inteligente",
+    subtitle: "Calcula, captura texto y resuelve dudas rapidas para estudio, trabajo o uso diario.",
+    inputLabel: "Pregunta, texto o expresion",
+    inputPlaceholder: "Ej: 25*(8+2), resume este texto o explica una fraccion",
+    cameraButton: "Cam",
+    sendButton: "Resolver",
+    clearButton: "Limpiar",
+    aiStatusButton: "Estado IA",
+    captureButton: "Capturar",
+    switchCameraButton: "Cambiar",
+    closeButton: "Cerrar",
+    historyTitle: "Historial",
+    hide: "Ocultar",
+    show: "Mostrar",
+    resultEmpty: "Aqui veras resultados, explicaciones breves o texto detectado.",
+    historyEmpty: "Tus operaciones y respuestas recientes apareceran aqui.",
+    liveOutput: "Live output",
+    cameraTitle: "Capturar texto o operacion",
+    cameraCopy: "Enfoca una nota, una operacion o una pregunta corta y captura la parte importante.",
+    cameraGuideLabel: "Coloca aqui el texto o la operacion",
+    keyboardLabel: "Teclado de calculadora",
+    modeAuto: "Modo auto",
+    modeCalc: "Modo calculo",
+    modeAi: "Modo IA",
+    kClear: "AC",
+    kDelete: "DEL",
+    statusReady: "Lista para calcular, leer texto o ayudarte con una duda.",
+    statusMissing: "Falta contenido para resolver.",
+    emptyInputResult: "Escribe una operacion, una pregunta o una instruccion corta.",
+    calcResolved: "Operacion resuelta localmente.",
+    calcError: "No pude evaluar esa expresion. Revisa parentesis y operadores.",
+    calcNeedsFix: "La expresion necesita correccion.",
+    askingAi: "Intentando resolver con IA.",
+    consultingAi: "Consultando el motor inteligente...",
+    aiResponse: "Respuesta generada por el backend de IA.",
+    aiResponseWithLimit: (remaining) => `Respuesta generada por IA. Te quedan ${remaining} consultas hoy.`,
+    aiAdminActive: "Respuesta generada por el backend de IA. Modo admin activo.",
+    aiUnavailable: "La IA no estuvo disponible y se mostro una ayuda local.",
+    publicLimitReached: "Limite diario alcanzado para publico.",
+    aiQuotaExceeded: "La IA esta configurada, pero la cuenta de OpenAI no tiene cuota disponible en este momento.",
+    aiInvalidKey: "La IA no pudo autenticarse con OpenAI. Revisa la API key del backend.",
+    aiMissingKey: "El backend esta encendido, pero falta configurar OPENAI_API_KEY en Render.",
+    aiDailyLimitReached: (limit) => `La demo publica ya alcanzo su limite diario de ${limit || 5} consultas de IA.`,
+    aiGenericError: "No pude completar la consulta con IA.",
+    localHelpDefault: "Puedo calcular, leer texto con la camara y ayudarte con preguntas breves si la IA esta disponible.",
+    localHelpLanguage: "Puedo intentarlo, pero para preguntas escritas en lenguaje natural es mejor usar la IA y escribir la idea completa.",
+    cameraReady: "Camara lista para capturar.",
+    cameraAccessError: "No se pudo acceder a la camara. Usa HTTPS o permisos del navegador.",
+    cameraAccessFail: "Fallo el acceso a la camara.",
+    cameraNotActive: "La camara aun no esta activa.",
+    cameraWait: "Espera un momento a que cargue la imagen de la camara.",
+    processingImage: "Procesando texto de la imagen...",
+    processingOcr: "Mejorando la imagen y ejecutando OCR.",
+    textDetected: "Texto detectado desde la camara.",
+    ocrError: "No pude leer bien la imagen. Intenta acercarte mas, usar buena luz y enfocar solo el ejercicio.",
+    ocrFail: "El OCR no encontro un texto legible.",
+    cameraClosed: "Camara cerrada.",
+    fieldsReset: "Campos reiniciados.",
+    fieldsCleared: "Campos limpiados.",
+    backendChecking: "Comprobando el estado del backend de IA...",
+    backendConsulting: "Consultando disponibilidad del backend.",
+    backendUnavailable: "Backend IA no disponible.",
+    backendPublicUnavailable: "No pude conectar con el backend publico de IA.",
+    backendConfigured: (model, remaining) => `IA lista. Modelo: ${model}. Quedan ${remaining} consultas hoy.`,
+    backendAdmin: (model) => `IA lista. Modo admin activo. Modelo: ${model}.`,
+    backendPublicLimit: (limit) => `Demo publica con limite diario de ${limit} consultas por usuario.`,
+    backendAdminCopy: "Tu usuario no tiene limite diario activo.",
+    backendQuota: (model) => `Backend conectado, pero OpenAI devolvio cuota agotada. Modelo: ${model}.`,
+    backendQuotaCopy: "La IA esta configurada, pero la cuenta no tiene cuota disponible.",
+    backendInvalid: (model) => `Backend conectado, pero la API key fue rechazada por OpenAI. Modelo: ${model}.`,
+    backendInvalidCopy: "La API key del backend necesita revision.",
+    backendMissing: (model) => `El backend responde, pero falta OPENAI_API_KEY. Modelo configurado: ${model}.`,
+    backendMissingCopy: "Backend activo, pero sin API key.",
+    backendDegraded: (model) => `Backend conectado con incidencias recientes. Modelo: ${model}.`,
+    backendDegradedCopy: "OpenAI respondio con error en una consulta reciente."
+  },
+  en: {
+    langButton: "ES",
+    eyebrow: "Smart assistant",
+    subtitle: "Calculate, capture text, and solve quick questions for study, work, or everyday use.",
+    inputLabel: "Question, text, or expression",
+    inputPlaceholder: "Ex: 25*(8+2), summarize this text, or explain an equivalent fraction",
+    cameraButton: "Scan",
+    sendButton: "Solve",
+    clearButton: "Clear",
+    aiStatusButton: "AI status",
+    captureButton: "Capture",
+    switchCameraButton: "Switch",
+    closeButton: "Close",
+    historyTitle: "History",
+    hide: "Hide",
+    show: "Show",
+    resultEmpty: "Results, short explanations, or detected text will appear here.",
+    historyEmpty: "Your recent results and responses will appear here.",
+    liveOutput: "Live output",
+    cameraTitle: "Capture text or problem",
+    cameraCopy: "Point at a note, short text, or math problem and capture the important area.",
+    cameraGuideLabel: "Place text or problem here",
+    keyboardLabel: "Calculator keyboard",
+    modeAuto: "Auto mode",
+    modeCalc: "Calc mode",
+    modeAi: "AI mode",
+    kClear: "Clear",
+    kDelete: "Back",
+    statusReady: "Ready to calculate, read text, or help with a quick question.",
+    statusMissing: "There is nothing to solve yet.",
+    emptyInputResult: "Type an expression, question, or short instruction.",
+    calcResolved: "Expression solved locally.",
+    calcError: "I could not evaluate that expression. Check parentheses and operators.",
+    calcNeedsFix: "That expression needs correction.",
+    askingAi: "Trying to answer with AI.",
+    consultingAi: "Consulting the AI engine...",
+    aiResponse: "Answer generated by the AI backend.",
+    aiResponseWithLimit: (remaining) => `AI answer generated. You have ${remaining} AI requests left today.`,
+    aiAdminActive: "AI answer generated. Admin mode is active.",
+    aiUnavailable: "AI was unavailable, so local help was shown.",
+    publicLimitReached: "Daily public limit reached.",
+    aiQuotaExceeded: "AI is configured, but the OpenAI account has no quota available right now.",
+    aiInvalidKey: "AI could not authenticate with OpenAI. Check the backend API key.",
+    aiMissingKey: "The backend is running, but OPENAI_API_KEY is missing in Render.",
+    aiDailyLimitReached: (limit) => `This public demo already reached its daily limit of ${limit || 5} AI requests.`,
+    aiGenericError: "I could not complete the AI request.",
+    localHelpDefault: "I can calculate, read text with the camera, and help with short questions if AI is available.",
+    localHelpLanguage: "I can try, but for natural-language questions it is better to use AI and write the full idea.",
+    cameraReady: "Camera ready to capture.",
+    cameraAccessError: "Camera access failed. Use HTTPS or browser permissions.",
+    cameraAccessFail: "Camera access failed.",
+    cameraNotActive: "The camera is not active yet.",
+    cameraWait: "Wait a moment for the camera image to load.",
+    processingImage: "Processing image text...",
+    processingOcr: "Enhancing image and running OCR.",
+    textDetected: "Text detected from the camera.",
+    ocrError: "I could not read the image well. Try moving closer, using better light, and focusing only on the text.",
+    ocrFail: "OCR could not find readable text.",
+    cameraClosed: "Camera closed.",
+    fieldsReset: "Fields reset.",
+    fieldsCleared: "Fields cleared.",
+    backendChecking: "Checking AI backend status...",
+    backendConsulting: "Checking backend availability.",
+    backendUnavailable: "AI backend unavailable.",
+    backendPublicUnavailable: "I could not connect to the public AI backend.",
+    backendConfigured: (model, remaining) => `AI ready. Model: ${model}. ${remaining} requests left today.`,
+    backendAdmin: (model) => `AI ready. Admin mode active. Model: ${model}.`,
+    backendPublicLimit: (limit) => `Public demo limit: ${limit} AI requests per user each day.`,
+    backendAdminCopy: "Your user has no daily limit active.",
+    backendQuota: (model) => `Backend is connected, but OpenAI reported exhausted quota. Model: ${model}.`,
+    backendQuotaCopy: "AI is configured, but the account has no quota available.",
+    backendInvalid: (model) => `Backend is connected, but the API key was rejected by OpenAI. Model: ${model}.`,
+    backendInvalidCopy: "The backend API key needs review.",
+    backendMissing: (model) => `The backend is responding, but OPENAI_API_KEY is missing. Configured model: ${model}.`,
+    backendMissingCopy: "Backend is active, but it has no API key.",
+    backendDegraded: (model) => `Backend is connected with recent issues. Model: ${model}.`,
+    backendDegradedCopy: "OpenAI returned an error during a recent request."
+  }
+};
+
+const keyboardLabels = {
+  es: { AC: "AC", DEL: "DEL" },
+  en: { AC: "Clear", DEL: "Back" }
+};
 
 let cameraStream = null;
 let usingBackCamera = true;
 let historyItems = [];
+let currentLang = getInitialLanguage();
+
+function getInitialLanguage() {
+  const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+  if (savedLang === "es" || savedLang === "en") {
+    return savedLang;
+  }
+
+  return navigator.language && navigator.language.toLowerCase().startsWith("es") ? "es" : "en";
+}
+
+function t(key, ...args) {
+  const value = translations[currentLang][key];
+  return typeof value === "function" ? value(...args) : value;
+}
 
 function getAdminToken() {
   try {
@@ -57,6 +246,56 @@ function buildAiHeaders() {
   }
 
   return headers;
+}
+
+function applyLanguage() {
+  document.documentElement.lang = currentLang;
+  eyebrow.textContent = t("eyebrow");
+  subtitle.textContent = t("subtitle");
+  inputLabel.textContent = t("inputLabel");
+  input.placeholder = t("inputPlaceholder");
+  cameraBtn.textContent = t("cameraButton");
+  cameraBtn.title = t("cameraButton");
+  sendBtn.textContent = t("sendButton");
+  clearBtn.textContent = t("clearButton");
+  editAiBtn.textContent = t("aiStatusButton");
+  captureBtn.textContent = t("captureButton");
+  switchCamBtn.textContent = t("switchCameraButton");
+  closeCamBtn.textContent = t("closeButton");
+  historyTitle.textContent = t("historyTitle");
+  keyboardSection.setAttribute("aria-label", t("keyboardLabel"));
+  result.setAttribute("data-live-label", t("liveOutput"));
+  historyContainer.setAttribute("data-empty", t("historyEmpty"));
+  cameraTitle.textContent = t("cameraTitle");
+  cameraCopy.textContent = t("cameraCopy");
+  cameraGuideLabel.textContent = t("cameraGuideLabel");
+  langBtn.textContent = t("langButton");
+  toggleHistoryBtn.textContent = historyContainer.hasAttribute("hidden") ? t("show") : t("hide");
+
+  keyboard.querySelectorAll(".kkc-key").forEach((button) => {
+    const key = button.dataset.key || button.textContent.trim();
+    button.textContent = keyboardLabels[currentLang][key] || key;
+  });
+
+  if (!result.textContent.trim()) {
+    result.textContent = t("resultEmpty");
+  }
+
+  if (!statusText.textContent.trim()) {
+    setStatus(t("statusReady"));
+  }
+
+  updateModeLabel(input.value);
+}
+
+function setLanguage(lang) {
+  currentLang = lang === "en" ? "en" : "es";
+  localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+  applyLanguage();
+}
+
+function toggleLanguage() {
+  setLanguage(currentLang === "es" ? "en" : "es");
 }
 
 function setStatus(message) {
@@ -100,18 +339,18 @@ function safeEvaluate(expression) {
   const compact = normalized.replace(/\s+/g, "");
 
   if (!compact) {
-    throw new Error("Expresion vacia");
+    throw new Error("empty-expression");
   }
 
   if (/[^0-9+\-*/().%\sMathsqrt]/.test(normalized)) {
-    throw new Error("Expresion no valida");
+    throw new Error("invalid-expression");
   }
 
   const evaluator = new Function(`return (${normalized});`);
   const value = evaluator();
 
   if (typeof value !== "number" || Number.isNaN(value) || !Number.isFinite(value)) {
-    throw new Error("Resultado no valido");
+    throw new Error("invalid-result");
   }
 
   return Number(value.toFixed(10)).toString();
@@ -122,39 +361,42 @@ function buildLocalExplanation(query) {
 
   if (isMathExpression(cleaned)) {
     const answer = safeEvaluate(cleaned);
-    return `Resultado: ${answer}`;
+    return currentLang === "en" ? `Result: ${answer}` : `Resultado: ${answer}`;
   }
 
-  if (/ecuacion|despeja|resuelve/i.test(cleaned)) {
-    return "Puedo intentar ayudarte, pero para ecuaciones escritas en lenguaje natural es mejor encender el backend de IA y escribir la pregunta completa.";
+  if (/ecuacion|despeja|resuelve|equation|solve/i.test(cleaned)) {
+    return t("localHelpLanguage");
   }
 
-  return "Puedo calcular operaciones, leer ejercicios con la camara y enviar preguntas matematicas al backend de IA si esta encendido.";
+  return t("localHelpDefault");
 }
 
 function explainAiError(data, fallbackMessage) {
   switch (data?.providerStatus) {
     case "quota_exceeded":
-      return "La IA esta configurada, pero la cuenta de OpenAI no tiene cuota disponible en este momento.";
+      return t("aiQuotaExceeded");
     case "invalid_api_key":
-      return "La IA no pudo autenticarse con OpenAI. Revisa la API key del backend.";
+      return t("aiInvalidKey");
     case "missing_api_key":
-      return "El backend esta encendido, pero falta configurar OPENAI_API_KEY en Render.";
+      return t("aiMissingKey");
     case "daily_limit_reached":
-      return `La demo publica ya alcanzo su limite diario de ${data.dailyLimit || 5} consultas de IA.`;
+      return t("aiDailyLimitReached", data.dailyLimit);
     default:
-      return fallbackMessage || "No pude completar la consulta con IA.";
+      return fallbackMessage || t("aiGenericError");
   }
 }
 
 function updateModeLabel(value) {
-  modeLabel.textContent = isMathExpression(value) ? "Modo calculo" : "Modo IA";
+  modeLabel.textContent = isMathExpression(value) ? t("modeCalc") : t("modeAi");
+  if (!value.trim()) {
+    modeLabel.textContent = t("modeAuto");
+  }
 }
 
 function optimizeMobileLayout() {
   if (window.innerWidth <= 640 && !historyContainer.hasAttribute("hidden")) {
     historyContainer.setAttribute("hidden", "");
-    toggleHistoryBtn.textContent = "Mostrar";
+    toggleHistoryBtn.textContent = t("show");
   }
 }
 
@@ -180,8 +422,8 @@ async function resolveInput() {
   const value = input.value.trim();
 
   if (!value) {
-    setResult("Escribe una operacion o una pregunta matematica.");
-    setStatus("Falta contenido para resolver.");
+    setResult(t("emptyInputResult"));
+    setStatus(t("statusMissing"));
     return;
   }
 
@@ -190,25 +432,26 @@ async function resolveInput() {
   if (isMathExpression(value)) {
     try {
       const answer = safeEvaluate(value);
-      setResult(`Resultado: ${answer}`);
-      setStatus("Operacion resuelta localmente.");
-      addHistoryItem(value, `Resultado: ${answer}`, "Calculo local");
+      const answerLabel = currentLang === "en" ? `Result: ${answer}` : `Resultado: ${answer}`;
+      setResult(answerLabel);
+      setStatus(t("calcResolved"));
+      addHistoryItem(value, answerLabel, currentLang === "en" ? "Local calc" : "Calculo local");
       revealResult();
-    } catch (error) {
-      setResult("No pude evaluar esa expresion. Revisa parentesis y operadores.");
-      setStatus("La expresion necesita correccion.");
+    } catch {
+      setResult(t("calcError"));
+      setStatus(t("calcNeedsFix"));
     }
     return;
   }
 
-  setResult("Consultando el motor inteligente...");
-  setStatus("Intentando resolver con IA.");
+  setResult(t("consultingAi"));
+  setStatus(t("askingAi"));
 
   try {
     const response = await fetch(AI_ENDPOINT, {
       method: "POST",
       headers: buildAiHeaders(),
-      body: JSON.stringify({ prompt: value })
+      body: JSON.stringify({ prompt: value, locale: currentLang })
     });
 
     const data = await response.json().catch(() => ({}));
@@ -224,28 +467,29 @@ async function resolveInput() {
       };
     }
 
-    const answer = data.answer || "El backend no devolvio respuesta.";
+    const answer = data.answer || (currentLang === "en" ? "The backend returned no answer." : "El backend no devolvio respuesta.");
     setResult(answer);
     setStatus(
       data.adminBypassActive
-        ? "Respuesta generada por el backend de IA. Modo admin activo."
+        ? t("aiAdminActive")
         : typeof data.remainingToday === "number"
-          ? `Respuesta generada por IA. Te quedan ${data.remainingToday} consultas hoy.`
-          : "Respuesta generada por el backend de IA."
+          ? t("aiResponseWithLimit", data.remainingToday)
+          : t("aiResponse")
     );
-    addHistoryItem(value, answer, "Backend IA");
+    addHistoryItem(value, answer, currentLang === "en" ? "AI backend" : "Backend IA");
     revealResult();
   } catch (error) {
     const fallback = buildLocalExplanation(value);
     const explanation = explainAiError(error, error?.details);
+    const localHelpPrefix = currentLang === "en" ? "Local help:" : "Ayuda local:";
 
-    setResult(`${explanation} Ayuda local: ${fallback}`);
+    setResult(`${explanation} ${localHelpPrefix} ${fallback}`);
     setStatus(
       error?.providerStatus === "daily_limit_reached"
-        ? "Limite diario alcanzado para publico."
-        : "La IA no estuvo disponible y se mostro una ayuda local."
+        ? t("publicLimitReached")
+        : t("aiUnavailable")
     );
-    addHistoryItem(value, fallback, "Ayuda local");
+    addHistoryItem(value, fallback, currentLang === "en" ? "Local help" : "Ayuda local");
     revealResult();
   }
 }
@@ -263,10 +507,10 @@ async function startCamera() {
 
     cameraVideo.srcObject = cameraStream;
     cameraModal.hidden = false;
-    setStatus("Camara lista para capturar.");
-  } catch (error) {
-    setResult("No se pudo acceder a la camara. Usa HTTPS o permisos del navegador.");
-    setStatus("Fallo el acceso a la camara.");
+    setStatus(t("cameraReady"));
+  } catch {
+    setResult(t("cameraAccessError"));
+    setStatus(t("cameraAccessFail"));
     cameraModal.hidden = true;
   }
 }
@@ -343,7 +587,7 @@ async function readMathFromCanvas(sourceCanvas) {
 
 async function captureAndRead() {
   if (!cameraStream) {
-    setStatus("La camara aun no esta activa.");
+    setStatus(t("cameraNotActive"));
     return;
   }
 
@@ -351,7 +595,7 @@ async function captureAndRead() {
   const height = cameraVideo.videoHeight;
 
   if (!width || !height) {
-    setStatus("Espera un momento a que cargue la imagen de la camara.");
+    setStatus(t("cameraWait"));
     return;
   }
 
@@ -365,27 +609,27 @@ async function captureAndRead() {
   const context = canvas.getContext("2d", { willReadFrequently: true });
   context.drawImage(cameraVideo, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
-  setResult("Procesando texto de la imagen...");
-  setStatus("Mejorando la imagen y ejecutando OCR.");
+  setResult(t("processingImage"));
+  setStatus(t("processingOcr"));
 
   try {
     const text = await readMathFromCanvas(canvas);
 
     if (!text) {
-      throw new Error("No se detecto texto");
+      throw new Error("No text detected");
     }
 
     input.value = text;
     updateModeLabel(text);
-    setStatus("Texto detectado desde la camara.");
+    setStatus(t("textDetected"));
     revealResult();
-    addHistoryItem("Escaneo", text, "OCR");
+    addHistoryItem(currentLang === "en" ? "Scan" : "Escaneo", text, "OCR");
     cameraModal.hidden = true;
     stopCamera();
     await resolveInput();
-  } catch (error) {
-    setResult("No pude leer bien la imagen. Intenta acercarte mas, usar buena luz y enfocar solo el ejercicio.");
-    setStatus("El OCR no encontro un ejercicio legible.");
+  } catch {
+    setResult(t("ocrError"));
+    setStatus(t("ocrFail"));
   }
 }
 
@@ -393,8 +637,8 @@ function handleKeyboardInput(key) {
   switch (key) {
     case "AC":
       input.value = "";
-      setResult("El resultado o la explicacion apareceran aqui.");
-      setStatus("Campos reiniciados.");
+      setResult(t("resultEmpty"));
+      setStatus(t("fieldsReset"));
       break;
     case "DEL":
       input.value = input.value.slice(0, -1);
@@ -420,6 +664,7 @@ function handleKeyboardInput(key) {
 }
 
 cameraBtn.addEventListener("click", startCamera);
+langBtn.addEventListener("click", toggleLanguage);
 switchCamBtn.addEventListener("click", async () => {
   usingBackCamera = !usingBackCamera;
   await startCamera();
@@ -427,21 +672,21 @@ switchCamBtn.addEventListener("click", async () => {
 closeCamBtn.addEventListener("click", () => {
   cameraModal.hidden = true;
   stopCamera();
-  setStatus("Camara cerrada.");
+  setStatus(t("cameraClosed"));
 });
 captureBtn.addEventListener("click", captureAndRead);
 
 sendBtn.addEventListener("click", resolveInput);
 clearBtn.addEventListener("click", () => {
   input.value = "";
-  setResult("El resultado o la explicacion apareceran aqui.");
-  setStatus("Campos limpiados.");
+  setResult(t("resultEmpty"));
+  setStatus(t("fieldsCleared"));
   updateModeLabel("");
 });
 
 editAiBtn.addEventListener("click", () => {
-  setResult("Comprobando el estado del backend de IA...");
-  setStatus("Consultando disponibilidad del backend.");
+  setResult(t("backendChecking"));
+  setStatus(t("backendConsulting"));
 
   fetch(AI_HEALTH_ENDPOINT, { headers: ADMIN_TOKEN ? { "x-kkc-admin-token": ADMIN_TOKEN } : {} })
     .then(async (response) => {
@@ -450,33 +695,33 @@ editAiBtn.addEventListener("click", () => {
       }
 
       const data = await response.json();
-      let statusLine = "Backend IA no disponible.";
-      let statusCopy = "Backend IA no disponible.";
+      let statusLine = t("backendUnavailable");
+      let statusCopy = t("backendUnavailable");
 
       switch (data.providerStatus) {
         case "configured":
           statusLine = data.adminBypassActive
-            ? `IA lista. Modo admin activo. Modelo: ${data.model}.`
-            : `IA lista. Modelo: ${data.model}. Quedan ${data.remainingToday ?? data.dailyLimit} consultas hoy.`;
+            ? t("backendAdmin", data.model)
+            : t("backendConfigured", data.model, data.remainingToday ?? data.dailyLimit);
           statusCopy = data.adminBypassActive
-            ? "Tu usuario no tiene limite diario activo."
-            : `Demo publica con limite diario de ${data.dailyLimit} consultas por usuario.`;
+            ? t("backendAdminCopy")
+            : t("backendPublicLimit", data.dailyLimit);
           break;
         case "quota_exceeded":
-          statusLine = `Backend conectado, pero OpenAI devolvio cuota agotada. Modelo: ${data.model}.`;
-          statusCopy = "La IA esta configurada, pero la cuenta no tiene cuota disponible.";
+          statusLine = t("backendQuota", data.model);
+          statusCopy = t("backendQuotaCopy");
           break;
         case "invalid_api_key":
-          statusLine = `Backend conectado, pero la API key fue rechazada por OpenAI. Modelo: ${data.model}.`;
-          statusCopy = "La API key del backend necesita revision.";
+          statusLine = t("backendInvalid", data.model);
+          statusCopy = t("backendInvalidCopy");
           break;
         case "missing_api_key":
-          statusLine = `El backend responde, pero falta OPENAI_API_KEY. Modelo configurado: ${data.model}.`;
-          statusCopy = "Backend activo, pero sin API key.";
+          statusLine = t("backendMissing", data.model);
+          statusCopy = t("backendMissingCopy");
           break;
         case "degraded":
-          statusLine = `Backend conectado con incidencias recientes. Modelo: ${data.model}.`;
-          statusCopy = "OpenAI respondio con error en una consulta reciente.";
+          statusLine = t("backendDegraded", data.model);
+          statusCopy = t("backendDegradedCopy");
           break;
       }
 
@@ -485,8 +730,8 @@ editAiBtn.addEventListener("click", () => {
       revealResult();
     })
     .catch(() => {
-      setResult("No pude conectar con el backend publico de IA.");
-      setStatus("Backend IA no disponible.");
+      setResult(t("backendPublicUnavailable"));
+      setStatus(t("backendUnavailable"));
       revealResult();
     });
 });
@@ -495,10 +740,10 @@ toggleHistoryBtn.addEventListener("click", () => {
   const isHidden = historyContainer.hasAttribute("hidden");
   if (isHidden) {
     historyContainer.removeAttribute("hidden");
-    toggleHistoryBtn.textContent = "Ocultar";
+    toggleHistoryBtn.textContent = t("hide");
   } else {
     historyContainer.setAttribute("hidden", "");
-    toggleHistoryBtn.textContent = "Mostrar";
+    toggleHistoryBtn.textContent = t("show");
   }
 });
 
@@ -508,7 +753,7 @@ keyboard.addEventListener("click", (event) => {
     return;
   }
 
-  handleKeyboardInput(keyButton.textContent.trim());
+  handleKeyboardInput(keyButton.dataset.key || keyButton.textContent.trim());
 });
 
 input.addEventListener("input", (event) => {
@@ -524,4 +769,7 @@ input.addEventListener("keydown", (event) => {
 
 window.addEventListener("beforeunload", stopCamera);
 optimizeMobileLayout();
+applyLanguage();
+setResult(t("resultEmpty"));
+setStatus(t("statusReady"));
 updateModeLabel("");
