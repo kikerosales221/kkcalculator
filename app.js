@@ -591,35 +591,40 @@ async function captureAndRead() {
     setStatus(t("cameraNotActive"));
     return;
   }
+
   const width = cameraVideo.videoWidth;
   const height = cameraVideo.videoHeight;
   if (!width || !height) {
     setStatus(t("cameraWait"));
     return;
   }
+
   const cropWidth = Math.floor(width * 0.82);
   const cropHeight = Math.floor(height * 0.34);
   const cropX = Math.floor((width - cropWidth) / 2);
   const cropY = Math.floor((height - cropHeight) / 2.5);
+
   canvas.width = cropWidth;
   canvas.height = cropHeight;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   context.drawImage(cameraVideo, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
   clearSuggestions();
   setResult(t("processingImage"));
   setStatus(t("processingOcr"));
+
   try {
     const text = await readMathFromCanvas(canvas);
     if (!text) {
       throw new Error("No text detected");
     }
+
     input.value = text;
     updateModeLabel(text);
     setStatus(t("textDetected"));
-    revealResult();
     cameraModal.hidden = true;
     stopCamera();
-    await resolveInput();
+    openOcrReview(text);
   } catch {
     setResult(t("ocrError"));
     setStatus(t("ocrFail"));
@@ -669,6 +674,12 @@ closeCamBtn.addEventListener("click", () => {
   setStatus(t("cameraClosed"));
 });
 captureBtn.addEventListener("click", captureAndRead);
+if (ocrUseBtn) ocrUseBtn.addEventListener("click", () => useReviewedText(false));
+if (ocrAskBtn) ocrAskBtn.addEventListener("click", () => useReviewedText(true));
+if (ocrCancelBtn) ocrCancelBtn.addEventListener("click", () => {
+  closeOcrReview();
+  setStatus(t("cameraClosed"));
+});
 sendBtn.addEventListener("click", resolveInput);
 clearBtn.addEventListener("click", () => {
   input.value = "";
@@ -766,6 +777,10 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
+
+
+
 
 
 

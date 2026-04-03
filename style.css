@@ -454,7 +454,7 @@ body::after {
 }
 
 .kkc-camera-panel {
-  width: min(92vw, 440px);
+  width: min(96vw, 560px);
   padding: 22px;
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(15, 28, 38, 0.98), rgba(8, 13, 18, 0.98));
@@ -509,7 +509,7 @@ body::after {
   margin-top: 12px;
   border-radius: 18px;
   background: #0a131b;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -741,3 +741,4 @@ body::after {
     font-size: 0.95rem;
   }
 }
+
