@@ -17,10 +17,10 @@ const eyebrow = document.getElementById("kkc-eyebrow");
 const subtitle = document.getElementById("kkc-subtitle");
 const inputLabel = document.getElementById("kkc-input-label");
 const langBtn = document.getElementById("kkc-lang-btn");
+const suggestionsContainer = document.getElementById("kkc-suggestions");
 const cameraTitle = document.getElementById("kkc-camera-title");
 const cameraCopy = document.getElementById("kkc-camera-copy");
 const cameraGuideLabel = document.getElementById("kkc-camera-guide-label");
-
 const cameraModal = document.getElementById("kkc-camera-modal");
 const cameraVideo = document.getElementById("kkc-camera-video");
 const captureBtn = document.getElementById("kkc-capture-btn");
@@ -113,7 +113,13 @@ const translations = {
     backendMissing: (model) => `El backend responde, pero falta OPENAI_API_KEY. Modelo configurado: ${model}.`,
     backendMissingCopy: "Backend activo, pero sin API key.",
     backendDegraded: (model) => `Backend conectado con incidencias recientes. Modelo: ${model}.`,
-    backendDegradedCopy: "OpenAI respondio con error en una consulta reciente."
+    backendDegradedCopy: "OpenAI respondio con error en una consulta reciente.",
+    suggestionExplain: "Explicar mejor",
+    suggestionShorter: "Mas corto",
+    suggestionBullets: "En puntos",
+    suggestionRewrite: "Reescribir",
+    suggestionSteps: "Paso a paso",
+    suggestionExample: "Dar ejemplo"
   },
   en: {
     langButton: "ES",
@@ -192,7 +198,13 @@ const translations = {
     backendMissing: (model) => `The backend is responding, but OPENAI_API_KEY is missing. Configured model: ${model}.`,
     backendMissingCopy: "Backend is active, but it has no API key.",
     backendDegraded: (model) => `Backend is connected with recent issues. Model: ${model}.`,
-    backendDegradedCopy: "OpenAI returned an error during a recent request."
+    backendDegradedCopy: "OpenAI returned an error during a recent request.",
+    suggestionExplain: "Explain more",
+    suggestionShorter: "Shorter",
+    suggestionBullets: "Bullet list",
+    suggestionRewrite: "Rewrite",
+    suggestionSteps: "Show steps",
+    suggestionExample: "Give example"
   }
 };
 
@@ -204,6 +216,7 @@ const keyboardLabels = {
 let cameraStream = null;
 let usingBackCamera = true;
 let historyItems = [];
+let lastInteraction = null;
 let currentLang = getInitialLanguage();
 
 function getInitialLanguage() {
@@ -211,7 +224,6 @@ function getInitialLanguage() {
   if (savedLang === "es" || savedLang === "en") {
     return savedLang;
   }
-
   return navigator.language && navigator.language.toLowerCase().startsWith("es") ? "es" : "en";
 }
 
@@ -224,14 +236,12 @@ function getAdminToken() {
   try {
     const url = new URL(window.location.href);
     const queryToken = url.searchParams.get(ADMIN_QUERY_PARAM);
-
     if (queryToken) {
       localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, queryToken.trim());
       url.searchParams.delete(ADMIN_QUERY_PARAM);
       window.history.replaceState({}, "", url.toString());
       return queryToken.trim();
     }
-
     return localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "";
   } catch {
     return "";
@@ -242,11 +252,9 @@ const ADMIN_TOKEN = getAdminToken();
 
 function buildAiHeaders() {
   const headers = { "Content-Type": "application/json" };
-
   if (ADMIN_TOKEN) {
     headers["x-kkc-admin-token"] = ADMIN_TOKEN;
   }
-
   return headers;
 }
 
@@ -260,11 +268,9 @@ function buildHealthUrl() {
 
 function buildAskPayload(prompt) {
   const payload = { prompt, locale: currentLang };
-
   if (ADMIN_TOKEN) {
     payload.adminToken = ADMIN_TOKEN;
   }
-
   return payload;
 }
 
@@ -291,21 +297,18 @@ function applyLanguage() {
   cameraGuideLabel.textContent = t("cameraGuideLabel");
   langBtn.textContent = t("langButton");
   toggleHistoryBtn.textContent = historyContainer.hasAttribute("hidden") ? t("show") : t("hide");
-
   keyboard.querySelectorAll(".kkc-key").forEach((button) => {
     const key = button.dataset.key || button.textContent.trim();
     button.textContent = keyboardLabels[currentLang][key] || key;
   });
-
   if (!result.textContent.trim()) {
     result.textContent = t("resultEmpty");
   }
-
   if (!statusText.textContent.trim()) {
     setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
   }
-
   updateModeLabel(input.value);
+  renderSuggestions();
 }
 
 function setLanguage(lang) {
@@ -326,22 +329,82 @@ function setResult(message) {
   result.textContent = message;
 }
 
+function clearSuggestions() {
+  suggestionsContainer.innerHTML = "";
+  suggestionsContainer.hidden = true;
+}
+
+function buildSuggestionDefinitions(source) {
+  if (!source) {
+    return [];
+  }
+  if (source === "local-calc") {
+    return [
+      { action: "steps", label: t("suggestionSteps") },
+      { action: "explain", label: t("suggestionExplain") },
+      { action: "example", label: t("suggestionExample") }
+    ];
+  }
+  return [
+    { action: "explain", label: t("suggestionExplain") },
+    { action: "shorter", label: t("suggestionShorter") },
+    { action: "bullets", label: t("suggestionBullets") },
+    { action: "rewrite", label: t("suggestionRewrite") }
+  ];
+}
+
+function renderSuggestions() {
+  if (!lastInteraction) {
+    clearSuggestions();
+    return;
+  }
+  const defs = buildSuggestionDefinitions(lastInteraction.source);
+  suggestionsContainer.innerHTML = "";
+  defs.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "kkc-suggestion-chip";
+    button.dataset.action = item.action;
+    button.textContent = item.label;
+    suggestionsContainer.appendChild(button);
+  });
+  suggestionsContainer.hidden = defs.length === 0;
+}
+
+function rememberInteraction(query, answer, source) {
+  lastInteraction = { query, answer, source };
+  renderSuggestions();
+}
+
+function buildSuggestionPrompt(action) {
+  if (!lastInteraction) {
+    return "";
+  }
+  const { query, answer } = lastInteraction;
+  switch (action) {
+    case "explain":
+      return currentLang === "en" ? `Explain this answer more clearly: ${answer}. Original request: ${query}` : `Explica esta respuesta de forma mas clara: ${answer}. Solicitud original: ${query}`;
+    case "shorter":
+      return currentLang === "en" ? `Make this answer shorter and clearer: ${answer}` : `Haz esta respuesta mas corta y clara: ${answer}`;
+    case "bullets":
+      return currentLang === "en" ? `Turn this answer into 3 short bullet points: ${answer}` : `Convierte esta respuesta en 3 puntos cortos: ${answer}`;
+    case "rewrite":
+      return currentLang === "en" ? `Rewrite this in a polished professional way: ${answer}` : `Reescribe esto de forma mas profesional y clara: ${answer}`;
+    case "steps":
+      return currentLang === "en" ? `Show the steps for this result. Original expression or question: ${query}. Current answer: ${answer}` : `Muestra los pasos de este resultado. Expresion o pregunta original: ${query}. Respuesta actual: ${answer}`;
+    case "example":
+      return currentLang === "en" ? `Give one simple real-life example for this answer: ${answer}` : `Da un ejemplo simple de la vida real para esta respuesta: ${answer}`;
+    default:
+      return "";
+  }
+}
+
 function revealResult() {
   result.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function normalizeExpression(rawExpression) {
-  return rawExpression
-    .replace(/,/g, ".")
-    .replace(/\u00F7/g, "/")
-    .replace(/\u00D7/g, "*")
-    .replace(/x/g, "*")
-    .replace(/X/g, "*")
-    .replace(/\^2/g, "**2")
-    .replace(/(\d+)%/g, "($1/100)")
-    .replace(/sqrt\s*\(/gi, "Math.sqrt(")
-    .replace(/\u221A\s*\(/g, "Math.sqrt(")
-    .replace(/\u221A/g, "Math.sqrt(");
+  return rawExpression.replace(/,/g, ".").replace(/\u00F7/g, "/").replace(/\u00D7/g, "*").replace(/x/g, "*").replace(/X/g, "*").replace(/\^2/g, "**2").replace(/(\d+)%/g, "($1/100)").replace(/sqrt\s*\(/gi, "Math.sqrt(").replace(/\u221A\s*\(/g, "Math.sqrt(").replace(/\u221A/g, "Math.sqrt(");
 }
 
 function isMathExpression(value) {
@@ -349,7 +412,6 @@ function isMathExpression(value) {
   if (!trimmed) {
     return false;
   }
-
   const compact = normalizeExpression(trimmed).replace(/\s+/g, "");
   return /^[0-9+\-*/().%\s]*$/.test(trimmed) || /^[0-9+\-*/().Mathsqrt]+$/.test(compact);
 }
@@ -357,52 +419,38 @@ function isMathExpression(value) {
 function safeEvaluate(expression) {
   const normalized = normalizeExpression(expression);
   const compact = normalized.replace(/\s+/g, "");
-
   if (!compact) {
     throw new Error("empty-expression");
   }
-
   if (/[^0-9+\-*/().%\sMathsqrt]/.test(normalized)) {
     throw new Error("invalid-expression");
   }
-
   const evaluator = new Function(`return (${normalized});`);
   const value = evaluator();
-
   if (typeof value !== "number" || Number.isNaN(value) || !Number.isFinite(value)) {
     throw new Error("invalid-result");
   }
-
   return Number(value.toFixed(10)).toString();
 }
-
 function buildLocalExplanation(query) {
   const cleaned = query.trim();
-
   if (isMathExpression(cleaned)) {
     const answer = safeEvaluate(cleaned);
     return currentLang === "en" ? `Result: ${answer}` : `Resultado: ${answer}`;
   }
-
   if (/ecuacion|despeja|resuelve|equation|solve/i.test(cleaned)) {
     return t("localHelpLanguage");
   }
-
   return t("localHelpDefault");
 }
 
 function explainAiError(data, fallbackMessage) {
   switch (data?.providerStatus) {
-    case "quota_exceeded":
-      return t("aiQuotaExceeded");
-    case "invalid_api_key":
-      return t("aiInvalidKey");
-    case "missing_api_key":
-      return t("aiMissingKey");
-    case "daily_limit_reached":
-      return t("aiDailyLimitReached", data.dailyLimit);
-    default:
-      return fallbackMessage || t("aiGenericError");
+    case "quota_exceeded": return t("aiQuotaExceeded");
+    case "invalid_api_key": return t("aiInvalidKey");
+    case "missing_api_key": return t("aiMissingKey");
+    case "daily_limit_reached": return t("aiDailyLimitReached", data.dailyLimit);
+    default: return fallbackMessage || t("aiGenericError");
   }
 }
 
@@ -423,27 +471,21 @@ function optimizeMobileLayout() {
 function addHistoryItem(query, answer, source) {
   historyItems.unshift({ query, answer, source });
   historyItems = historyItems.slice(0, MAX_HISTORY);
-
   historyContainer.innerHTML = "";
-
   historyItems.forEach((item) => {
     const article = document.createElement("article");
     article.className = "kkc-history-item";
-    article.innerHTML = `
-      <p class="kkc-history-query">${item.query}</p>
-      <p class="kkc-history-answer">${item.answer}</p>
-      <span class="kkc-history-source">${item.source}</span>
-    `;
+    article.innerHTML = `<p class="kkc-history-query">${item.query}</p><p class="kkc-history-answer">${item.answer}</p><span class="kkc-history-source">${item.source}</span>`;
     historyContainer.appendChild(article);
   });
 }
 
 async function resolveInput() {
   const value = input.value.trim();
-
   if (!value) {
     setResult(t("emptyInputResult"));
     setStatus(t("statusMissing"));
+    clearSuggestions();
     return;
   }
 
@@ -455,60 +497,40 @@ async function resolveInput() {
       const answerLabel = currentLang === "en" ? `Result: ${answer}` : `Resultado: ${answer}`;
       setResult(answerLabel);
       setStatus(t("calcResolved"));
+      rememberInteraction(value, answerLabel, "local-calc");
       addHistoryItem(value, answerLabel, currentLang === "en" ? "Local calc" : "Calculo local");
       revealResult();
     } catch {
       setResult(t("calcError"));
       setStatus(t("calcNeedsFix"));
+      clearSuggestions();
     }
     return;
   }
 
+  clearSuggestions();
   setResult(t("consultingAi"));
   setStatus(t("askingAi"));
 
   try {
-    const response = await fetch(AI_ENDPOINT, {
-      method: "POST",
-      headers: buildAiHeaders(),
-      body: JSON.stringify(buildAskPayload(value))
-    });
-
+    const response = await fetch(AI_ENDPOINT, { method: "POST", headers: buildAiHeaders(), body: JSON.stringify(buildAskPayload(value)) });
     const data = await response.json().catch(() => ({}));
-
     if (!response.ok) {
-      throw {
-        status: response.status,
-        providerStatus: data.providerStatus,
-        details: data.details,
-        dailyLimit: data.dailyLimit,
-        remainingToday: data.remainingToday,
-        message: data.error || `HTTP ${response.status}`
-      };
+      throw { status: response.status, providerStatus: data.providerStatus, details: data.details, dailyLimit: data.dailyLimit, remainingToday: data.remainingToday, message: data.error || `HTTP ${response.status}` };
     }
-
     const answer = data.answer || (currentLang === "en" ? "The backend returned no answer." : "El backend no devolvio respuesta.");
     setResult(answer);
-    setStatus(
-      data.adminBypassActive
-        ? t("aiAdminActive")
-        : typeof data.remainingToday === "number"
-          ? t("aiResponseWithLimit", data.remainingToday)
-          : t("aiResponse")
-    );
+    setStatus(data.adminBypassActive ? t("aiAdminActive") : typeof data.remainingToday === "number" ? t("aiResponseWithLimit", data.remainingToday) : t("aiResponse"));
+    rememberInteraction(value, answer, "ai");
     addHistoryItem(value, answer, currentLang === "en" ? "AI backend" : "Backend IA");
     revealResult();
   } catch (error) {
     const fallback = buildLocalExplanation(value);
     const explanation = explainAiError(error, error?.details);
     const localHelpPrefix = currentLang === "en" ? "Local help:" : "Ayuda local:";
-
     setResult(`${explanation} ${localHelpPrefix} ${fallback}`);
-    setStatus(
-      error?.providerStatus === "daily_limit_reached"
-        ? t("publicLimitReached")
-        : t("aiUnavailable")
-    );
+    setStatus(error?.providerStatus === "daily_limit_reached" ? t("publicLimitReached") : t("aiUnavailable"));
+    rememberInteraction(value, fallback, "fallback");
     addHistoryItem(value, fallback, currentLang === "en" ? "Local help" : "Ayuda local");
     revealResult();
   }
@@ -516,21 +538,15 @@ async function resolveInput() {
 
 async function startCamera() {
   stopCamera();
-
   try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: usingBackCamera ? "environment" : "user" }
-      },
-      audio: false
-    });
-
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: usingBackCamera ? "environment" : "user" } }, audio: false });
     cameraVideo.srcObject = cameraStream;
     cameraModal.hidden = false;
     setStatus(t("cameraReady"));
   } catch {
     setResult(t("cameraAccessError"));
     setStatus(t("cameraAccessFail"));
+    clearSuggestions();
     cameraModal.hidden = true;
   }
 }
@@ -539,21 +555,12 @@ function stopCamera() {
   if (cameraStream) {
     cameraStream.getTracks().forEach((track) => track.stop());
   }
-
   cameraStream = null;
   cameraVideo.srcObject = null;
 }
 
 function normalizeOcrText(rawText) {
-  return rawText
-    .replace(/[\r\n]+/g, " ")
-    .replace(/[|]/g, "/")
-    .replace(/[xX×]/g, "*")
-    .replace(/[–—]/g, "-")
-    .replace(/[÷]/g, "/")
-    .replace(/\s*([+\-*/=()%^])\s*/g, " $1 ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return rawText.replace(/[\r\n]+/g, " ").replace(/[|]/g, "/").replace(/[xX×]/g, "*").replace(/[–—]/g, "-").replace(/[÷]/g, "/").replace(/\s*([+\-*/=()%^])\s*/g, " $1 ").replace(/\s+/g, " ").trim();
 }
 
 function createOcrVariants(sourceCanvas) {
@@ -564,11 +571,9 @@ function createOcrVariants(sourceCanvas) {
   processedCanvas.width = width;
   processedCanvas.height = height;
   const processedContext = processedCanvas.getContext("2d", { willReadFrequently: true });
-
   processedContext.drawImage(sourceCanvas, 0, 0, width, height);
   const imageData = processedContext.getImageData(0, 0, width, height);
   const data = imageData.data;
-
   for (let i = 0; i < data.length; i += 4) {
     const gray = Math.round(data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
     const boosted = gray > 155 ? 255 : gray < 95 ? 0 : gray;
@@ -576,32 +581,23 @@ function createOcrVariants(sourceCanvas) {
     data[i + 1] = boosted;
     data[i + 2] = boosted;
   }
-
   processedContext.putImageData(imageData, 0, 0);
   variants.push(processedCanvas.toDataURL("image/png"));
   return variants;
 }
-
 async function readMathFromCanvas(sourceCanvas) {
   const variants = createOcrVariants(sourceCanvas);
   let bestText = "";
-
   for (const imageData of variants) {
-    const ocr = await Tesseract.recognize(imageData, "spa+eng", {
-      tessedit_pageseg_mode: "6",
-      tessedit_char_whitelist: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=().,%^ xX÷×v"
-    });
-
+    const ocr = await Tesseract.recognize(imageData, "spa+eng", { tessedit_pageseg_mode: "6", tessedit_char_whitelist: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=().,%^ xX÷×v" });
     const text = normalizeOcrText(ocr.data.text || "");
     if (text.length > bestText.length) {
       bestText = text;
     }
-
     if (/[0-9][0-9+\-*/=().,%^ ]+/.test(text)) {
       return text;
     }
   }
-
   return bestText;
 }
 
@@ -610,35 +606,28 @@ async function captureAndRead() {
     setStatus(t("cameraNotActive"));
     return;
   }
-
   const width = cameraVideo.videoWidth;
   const height = cameraVideo.videoHeight;
-
   if (!width || !height) {
     setStatus(t("cameraWait"));
     return;
   }
-
   const cropWidth = Math.floor(width * 0.82);
   const cropHeight = Math.floor(height * 0.34);
   const cropX = Math.floor((width - cropWidth) / 2);
   const cropY = Math.floor((height - cropHeight) / 2.5);
-
   canvas.width = cropWidth;
   canvas.height = cropHeight;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   context.drawImage(cameraVideo, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-
+  clearSuggestions();
   setResult(t("processingImage"));
   setStatus(t("processingOcr"));
-
   try {
     const text = await readMathFromCanvas(canvas);
-
     if (!text) {
       throw new Error("No text detected");
     }
-
     input.value = text;
     updateModeLabel(text);
     setStatus(t("textDetected"));
@@ -650,6 +639,7 @@ async function captureAndRead() {
   } catch {
     setResult(t("ocrError"));
     setStatus(t("ocrFail"));
+    clearSuggestions();
   }
 }
 
@@ -659,6 +649,7 @@ function handleKeyboardInput(key) {
       input.value = "";
       setResult(t("resultEmpty"));
       setStatus(t("fieldsReset"));
+      clearSuggestions();
       break;
     case "DEL":
       input.value = input.value.slice(0, -1);
@@ -679,7 +670,6 @@ function handleKeyboardInput(key) {
       input.value += key;
       break;
   }
-
   updateModeLabel(input.value);
 }
 
@@ -695,37 +685,31 @@ closeCamBtn.addEventListener("click", () => {
   setStatus(t("cameraClosed"));
 });
 captureBtn.addEventListener("click", captureAndRead);
-
 sendBtn.addEventListener("click", resolveInput);
 clearBtn.addEventListener("click", () => {
   input.value = "";
   setResult(t("resultEmpty"));
   setStatus(t("fieldsCleared"));
+  clearSuggestions();
   updateModeLabel("");
 });
 
 editAiBtn.addEventListener("click", () => {
+  clearSuggestions();
   setResult(t("backendChecking"));
   setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("backendConsulting"));
-
   fetch(buildHealthUrl(), { headers: ADMIN_TOKEN ? { "x-kkc-admin-token": ADMIN_TOKEN } : {} })
     .then(async (response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-
       const data = await response.json();
       let statusLine = t("backendUnavailable");
       let statusCopy = t("backendUnavailable");
-
       switch (data.providerStatus) {
         case "configured":
-          statusLine = data.adminBypassActive
-            ? t("backendAdmin", data.model)
-            : t("backendConfigured", data.model, data.remainingToday ?? data.dailyLimit);
-          statusCopy = data.adminBypassActive
-            ? t("backendAdminCopy")
-            : t("backendPublicLimit", data.dailyLimit);
+          statusLine = data.adminBypassActive ? t("backendAdmin", data.model) : t("backendConfigured", data.model, data.remainingToday ?? data.dailyLimit);
+          statusCopy = data.adminBypassActive ? t("backendAdminCopy") : t("backendPublicLimit", data.dailyLimit);
           break;
         case "quota_exceeded":
           statusLine = t("backendQuota", data.model);
@@ -744,13 +728,9 @@ editAiBtn.addEventListener("click", () => {
           statusCopy = t("backendDegradedCopy");
           break;
       }
-
       if (ADMIN_TOKEN && data.adminTokenProvided && !data.adminBypassActive) {
-        statusCopy = currentLang === "en"
-          ? "An admin token was sent, but it did not match the backend token."
-          : "Se envio un token admin, pero no coincide con el token del backend.";
+        statusCopy = currentLang === "en" ? "An admin token was sent, but it did not match the backend token." : "Se envio un token admin, pero no coincide con el token del backend.";
       }
-
       setResult(statusLine);
       setStatus(statusCopy);
       revealResult();
@@ -760,6 +740,20 @@ editAiBtn.addEventListener("click", () => {
       setStatus(t("backendUnavailable"));
       revealResult();
     });
+});
+
+suggestionsContainer.addEventListener("click", (event) => {
+  const button = event.target.closest(".kkc-suggestion-chip");
+  if (!button) {
+    return;
+  }
+  const nextPrompt = buildSuggestionPrompt(button.dataset.action);
+  if (!nextPrompt) {
+    return;
+  }
+  input.value = nextPrompt;
+  updateModeLabel(nextPrompt);
+  resolveInput();
 });
 
 toggleHistoryBtn.addEventListener("click", () => {
@@ -778,7 +772,6 @@ keyboard.addEventListener("click", (event) => {
   if (!keyButton) {
     return;
   }
-
   handleKeyboardInput(keyButton.dataset.key || keyButton.textContent.trim());
 });
 
@@ -799,4 +792,4 @@ applyLanguage();
 setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
-
+clearSuggestions();

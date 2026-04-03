@@ -680,3 +680,31 @@ body::after {
   }
 }
 
+
+.kkc-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.kkc-suggestion-chip {
+  appearance: none;
+  border: 1px solid rgba(124, 243, 208, 0.16);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(124, 243, 208, 0.08), rgba(57, 184, 255, 0.08));
+  color: var(--text);
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.kkc-suggestion-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(124, 243, 208, 0.28);
+  background: linear-gradient(180deg, rgba(124, 243, 208, 0.12), rgba(57, 184, 255, 0.12));
+}
