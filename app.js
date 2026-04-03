@@ -31,6 +31,10 @@ const ocrText = document.getElementById("kkc-ocr-text");
 const ocrUseBtn = document.getElementById("kkc-ocr-use-btn");
 const ocrAskBtn = document.getElementById("kkc-ocr-ask-btn");
 const ocrCancelBtn = document.getElementById("kkc-ocr-cancel-btn");
+const ocrReadBtn = document.getElementById("kkc-ocr-read-btn");
+const lensStage = document.getElementById("kkc-lens-stage");
+const lensPreview = document.getElementById("kkc-lens-preview");
+const lensSelection = document.getElementById("kkc-lens-selection");
 
 const AI_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/ask";
 const AI_HEALTH_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/health";
@@ -124,7 +128,9 @@ const translations = {
     ocrUse: "Usar texto",
     ocrAsk: "Preguntar",
     ocrCancel: "Cancelar",
-    ocrReviewReady: "Texto detectado. Revisa y ajusta antes de enviarlo."
+    ocrRead: "Leer seleccion",
+    ocrReviewReady: "Imagen capturada. Mueve el recuadro y lee solo la parte que te interesa.",
+    ocrSelectionRead: "Seleccion leida. Ajusta el texto si hace falta."
   },
   en: {
     langButton: "ES",
@@ -211,7 +217,9 @@ const translations = {
     ocrUse: "Use text",
     ocrAsk: "Ask AI",
     ocrCancel: "Cancel",
-    ocrReviewReady: "Text detected. Review and adjust it before sending."
+    ocrRead: "Read selection",
+    ocrReviewReady: "Image captured. Move the frame and read only the part you want.",
+    ocrSelectionRead: "Selection read. Adjust the text if needed."
   }
 };
 
@@ -599,37 +607,20 @@ async function captureAndRead() {
     return;
   }
 
-  const cropWidth = Math.floor(width * 0.82);
-  const cropHeight = Math.floor(height * 0.34);
-  const cropX = Math.floor((width - cropWidth) / 2);
-  const cropY = Math.floor((height - cropHeight) / 2.5);
-
-  canvas.width = cropWidth;
-  canvas.height = cropHeight;
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext("2d", { willReadFrequently: true });
-  context.drawImage(cameraVideo, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  context.drawImage(cameraVideo, 0, 0, width, height);
+
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = width;
+  sourceCanvas.height = height;
+  sourceCanvas.getContext("2d", { willReadFrequently: true }).drawImage(canvas, 0, 0);
 
   clearSuggestions();
-  setResult(t("processingImage"));
-  setStatus(t("processingOcr"));
-
-  try {
-    const text = await readMathFromCanvas(canvas);
-    if (!text) {
-      throw new Error("No text detected");
-    }
-
-    input.value = text;
-    updateModeLabel(text);
-    setStatus(t("textDetected"));
-    cameraModal.hidden = true;
-    stopCamera();
-    openOcrReview(text);
-  } catch {
-    setResult(t("ocrError"));
-    setStatus(t("ocrFail"));
-    clearSuggestions();
-  }
+  cameraModal.hidden = true;
+  stopCamera();
+  openOcrReviewFrame(sourceCanvas);
 }
 
 function handleKeyboardInput(key) {
@@ -680,6 +671,37 @@ if (ocrCancelBtn) ocrCancelBtn.addEventListener("click", () => {
   closeOcrReview();
   setStatus(t("cameraClosed"));
 });
+if (ocrReadBtn) ocrReadBtn.addEventListener("click", async () => {
+  try {
+    await readCurrentSelection();
+  } catch {
+    setResult(t("ocrError"));
+    setStatus(t("ocrFail"));
+  }
+});
+if (lensStage) {
+  lensStage.addEventListener("pointerdown", (event) => {
+    if (!lensSelectionRect || !lensPreview) return;
+    const bounds = lensStage.getBoundingClientRect();
+    lensPointerState = {
+      startX: event.clientX - bounds.left,
+      startY: event.clientY - bounds.top,
+      initialRect: { ...lensSelectionRect },
+      action: getLensHandleAction(event.target)
+    };
+    lensStage.setPointerCapture(event.pointerId);
+  });
+  lensStage.addEventListener("pointermove", (event) => {
+    if (!lensPointerState) return;
+    const bounds = lensStage.getBoundingClientRect();
+    updateLensSelection(event.clientX - bounds.left, event.clientY - bounds.top);
+  });
+  const endLensPointer = () => {
+    lensPointerState = null;
+  };
+  lensStage.addEventListener("pointerup", endLensPointer);
+  lensStage.addEventListener("pointercancel", endLensPointer);
+}
 sendBtn.addEventListener("click", resolveInput);
 clearBtn.addEventListener("click", () => {
   input.value = "";
@@ -777,6 +799,12 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
+
+
+
+
+
 
 
 

@@ -82,7 +82,13 @@
     <div class="kkc-camera-panel">
       <h2 class="kkc-camera-title" id="kkc-camera-title">Capturar texto o operacion</h2>
       <p class="kkc-camera-copy" id="kkc-camera-copy">Enfoca una nota, una operacion o una pregunta corta y captura la parte importante.</p>
-      <div class="kkc-camera-stage"><video id="kkc-camera-video" autoplay playsinline class="kkc-camera-video"></video><div class="kkc-camera-guide" aria-hidden="true"><div class="kkc-camera-guide-box"></div><p class="kkc-camera-guide-label" id="kkc-camera-guide-label">Coloca aqui el texto o la operacion</p></div></div>
+      <div class="kkc-camera-stage">
+        <video id="kkc-camera-video" autoplay playsinline class="kkc-camera-video"></video>
+        <div class="kkc-camera-guide" aria-hidden="true">
+          <div class="kkc-camera-guide-box"></div>
+          <p class="kkc-camera-guide-label" id="kkc-camera-guide-label">Coloca aqui el texto o la operacion</p>
+        </div>
+      </div>
       <div class="kkc-btn-row">
         <button id="kkc-capture-btn" class="kkc-btn kkc-btn-main" type="button">Capturar</button>
         <button id="kkc-switchcam-btn" class="kkc-btn kkc-btn-med" type="button">Cambiar</button>
@@ -92,26 +98,32 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
-  <script src="app.js"></script>
-
   <div id="kkc-ocr-modal" class="kkc-camera-modal" hidden>
     <div class="kkc-camera-panel kkc-ocr-panel">
       <h2 class="kkc-camera-title" id="kkc-ocr-title">Review detected text</h2>
-      <p class="kkc-camera-copy" id="kkc-ocr-copy">Edit the text, keep only the question or paragraph you want, and then choose what to do.</p>
+      <p class="kkc-camera-copy" id="kkc-ocr-copy">Move the frame over the paragraph you want, read that selection, and then edit the detected text if needed.</p>
+      <div class="kkc-lens-stage" id="kkc-lens-stage">
+        <canvas id="kkc-lens-preview" class="kkc-lens-preview"></canvas>
+        <div id="kkc-lens-selection" class="kkc-lens-selection">
+          <div class="kkc-lens-handle kkc-lens-handle-nw"></div>
+          <div class="kkc-lens-handle kkc-lens-handle-ne"></div>
+          <div class="kkc-lens-handle kkc-lens-handle-sw"></div>
+          <div class="kkc-lens-handle kkc-lens-handle-se"></div>
+        </div>
+      </div>
+      <div class="kkc-btn-row kkc-btn-row-lens">
+        <button id="kkc-ocr-read-btn" class="kkc-btn kkc-btn-main" type="button">Read selection</button>
+        <button id="kkc-ocr-cancel-btn" class="kkc-btn kkc-btn-med" type="button">Cancel</button>
+      </div>
       <textarea id="kkc-ocr-text" class="kkc-ocr-text" spellcheck="false"></textarea>
       <div class="kkc-btn-row">
         <button id="kkc-ocr-use-btn" class="kkc-btn kkc-btn-med" type="button">Use text</button>
         <button id="kkc-ocr-ask-btn" class="kkc-btn kkc-btn-main" type="button">Ask AI</button>
-        <button id="kkc-ocr-cancel-btn" class="kkc-btn kkc-btn-med" type="button">Cancel</button>
       </div>
     </div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-
-
-
-
-
-

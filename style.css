@@ -743,3 +743,64 @@ body::after {
 }
 
 
+
+.kkc-btn-row-lens {
+  margin-top: 14px;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.kkc-lens-stage {
+  position: relative;
+  margin-top: 14px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #050b10;
+  border: 1px solid rgba(255,255,255,0.08);
+  min-height: 280px;
+  touch-action: none;
+}
+
+.kkc-lens-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.kkc-lens-selection {
+  position: absolute;
+  border: 2px solid rgba(124, 243, 208, 0.95);
+  border-radius: 18px;
+  box-shadow: 0 0 0 999px rgba(4, 8, 12, 0.42), 0 0 0 5px rgba(124,243,208,0.08);
+  background: rgba(124, 243, 208, 0.04);
+  cursor: move;
+}
+
+.kkc-lens-handle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #05202d;
+}
+
+.kkc-lens-handle-nw { top: -9px; left: -9px; cursor: nwse-resize; }
+.kkc-lens-handle-ne { top: -9px; right: -9px; cursor: nesw-resize; }
+.kkc-lens-handle-sw { bottom: -9px; left: -9px; cursor: nesw-resize; }
+.kkc-lens-handle-se { bottom: -9px; right: -9px; cursor: nwse-resize; }
+
+@media (max-width: 640px) {
+  .kkc-lens-stage {
+    min-height: 250px;
+    border-radius: 16px;
+  }
+
+  .kkc-lens-selection {
+    border-radius: 16px;
+  }
+
+  .kkc-lens-handle {
+    width: 16px;
+    height: 16px;
+  }
+}
