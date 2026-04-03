@@ -10,9 +10,6 @@ const clearBtn = document.getElementById("kkc-clear-btn");
 const editAiBtn = document.getElementById("kkc-editai-btn");
 const keyboard = document.getElementById("kkc-keyboard");
 const keyboardSection = document.getElementById("kkc-keyboard-section");
-const historyContainer = document.getElementById("kkc-history");
-const historyTitle = document.getElementById("kkc-history-title");
-const toggleHistoryBtn = document.getElementById("kkc-toggle-history-btn");
 const eyebrow = document.getElementById("kkc-eyebrow");
 const subtitle = document.getElementById("kkc-subtitle");
 const inputLabel = document.getElementById("kkc-input-label");
@@ -30,7 +27,6 @@ const canvas = document.getElementById("kkc-canvas");
 
 const AI_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/ask";
 const AI_HEALTH_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/health";
-const MAX_HISTORY = 8;
 const ADMIN_TOKEN_STORAGE_KEY = "kkc_admin_token";
 const ADMIN_QUERY_PARAM = "kkc_admin";
 const LANG_STORAGE_KEY = "kkc_lang";
@@ -49,11 +45,7 @@ const translations = {
     captureButton: "Capturar",
     switchCameraButton: "Cambiar",
     closeButton: "Cerrar",
-    historyTitle: "Historial",
-    hide: "Ocultar",
-    show: "Mostrar",
     resultEmpty: "Aqui veras resultados, explicaciones breves o texto detectado.",
-    historyEmpty: "Tus operaciones y respuestas recientes apareceran aqui.",
     liveOutput: "Live output",
     cameraTitle: "Capturar texto o operacion",
     cameraCopy: "Enfoca una nota, una operacion o una pregunta corta y captura la parte importante.",
@@ -134,11 +126,7 @@ const translations = {
     captureButton: "Capture",
     switchCameraButton: "Switch",
     closeButton: "Close",
-    historyTitle: "History",
-    hide: "Hide",
-    show: "Show",
     resultEmpty: "Results, short explanations, or detected text will appear here.",
-    historyEmpty: "Your recent results and responses will appear here.",
     liveOutput: "Live output",
     cameraTitle: "Capture text or problem",
     cameraCopy: "Point at a note, short text, or math problem and capture the important area.",
@@ -215,7 +203,6 @@ const keyboardLabels = {
 
 let cameraStream = null;
 let usingBackCamera = true;
-let historyItems = [];
 let lastInteraction = null;
 let currentLang = getInitialLanguage();
 
@@ -288,15 +275,12 @@ function applyLanguage() {
   captureBtn.textContent = t("captureButton");
   switchCamBtn.textContent = t("switchCameraButton");
   closeCamBtn.textContent = t("closeButton");
-  historyTitle.textContent = t("historyTitle");
   keyboardSection.setAttribute("aria-label", t("keyboardLabel"));
   result.setAttribute("data-live-label", t("liveOutput"));
-  historyContainer.setAttribute("data-empty", t("historyEmpty"));
   cameraTitle.textContent = t("cameraTitle");
   cameraCopy.textContent = t("cameraCopy");
   cameraGuideLabel.textContent = t("cameraGuideLabel");
   langBtn.textContent = t("langButton");
-  toggleHistoryBtn.textContent = historyContainer.hasAttribute("hidden") ? t("show") : t("hide");
   keyboard.querySelectorAll(".kkc-key").forEach((button) => {
     const key = button.dataset.key || button.textContent.trim();
     button.textContent = keyboardLabels[currentLang][key] || key;
@@ -383,17 +367,17 @@ function buildSuggestionPrompt(action) {
   const { query, answer } = lastInteraction;
   switch (action) {
     case "explain":
-      return currentLang === "en" ? `Explain this answer more clearly: ${answer}. Original request: ${query}` : `Explica esta respuesta de forma mas clara: ${answer}. Solicitud original: ${query}`;
+      return currentLang === "en" ? `Explain this more clearly in simple words: ${answer}` : `Explica esto con palabras mas simples y claras: ${answer}`;
     case "shorter":
       return currentLang === "en" ? `Make this answer shorter and clearer: ${answer}` : `Haz esta respuesta mas corta y clara: ${answer}`;
     case "bullets":
       return currentLang === "en" ? `Turn this answer into 3 short bullet points: ${answer}` : `Convierte esta respuesta en 3 puntos cortos: ${answer}`;
     case "rewrite":
-      return currentLang === "en" ? `Rewrite this in a polished professional way: ${answer}` : `Reescribe esto de forma mas profesional y clara: ${answer}`;
+      return currentLang === "en" ? `Rewrite this clearly and naturally: ${answer}` : `Reescribe esto de forma clara y natural: ${answer}`;
     case "steps":
-      return currentLang === "en" ? `Show the steps for this result. Original expression or question: ${query}. Current answer: ${answer}` : `Muestra los pasos de este resultado. Expresion o pregunta original: ${query}. Respuesta actual: ${answer}`;
+      return currentLang === "en" ? `Show the steps for this result: ${query}` : `Muestra los pasos de este resultado: ${query}`;
     case "example":
-      return currentLang === "en" ? `Give one simple real-life example for this answer: ${answer}` : `Da un ejemplo simple de la vida real para esta respuesta: ${answer}`;
+      return currentLang === "en" ? `Give one simple real-life example for this: ${answer}` : `Da un ejemplo simple de la vida real para esto: ${answer}`;
     default:
       return "";
   }
@@ -462,22 +446,7 @@ function updateModeLabel(value) {
 }
 
 function optimizeMobileLayout() {
-  if (window.innerWidth <= 640 && !historyContainer.hasAttribute("hidden")) {
-    historyContainer.setAttribute("hidden", "");
-    toggleHistoryBtn.textContent = t("show");
-  }
-}
-
-function addHistoryItem(query, answer, source) {
-  historyItems.unshift({ query, answer, source });
-  historyItems = historyItems.slice(0, MAX_HISTORY);
-  historyContainer.innerHTML = "";
-  historyItems.forEach((item) => {
-    const article = document.createElement("article");
-    article.className = "kkc-history-item";
-    article.innerHTML = `<p class="kkc-history-query">${item.query}</p><p class="kkc-history-answer">${item.answer}</p><span class="kkc-history-source">${item.source}</span>`;
-    historyContainer.appendChild(article);
-  });
+  return;
 }
 
 async function resolveInput() {
@@ -498,7 +467,6 @@ async function resolveInput() {
       setResult(answerLabel);
       setStatus(t("calcResolved"));
       rememberInteraction(value, answerLabel, "local-calc");
-      addHistoryItem(value, answerLabel, currentLang === "en" ? "Local calc" : "Calculo local");
       revealResult();
     } catch {
       setResult(t("calcError"));
@@ -522,7 +490,6 @@ async function resolveInput() {
     setResult(answer);
     setStatus(data.adminBypassActive ? t("aiAdminActive") : typeof data.remainingToday === "number" ? t("aiResponseWithLimit", data.remainingToday) : t("aiResponse"));
     rememberInteraction(value, answer, "ai");
-    addHistoryItem(value, answer, currentLang === "en" ? "AI backend" : "Backend IA");
     revealResult();
   } catch (error) {
     const fallback = buildLocalExplanation(value);
@@ -531,7 +498,6 @@ async function resolveInput() {
     setResult(`${explanation} ${localHelpPrefix} ${fallback}`);
     setStatus(error?.providerStatus === "daily_limit_reached" ? t("publicLimitReached") : t("aiUnavailable"));
     rememberInteraction(value, fallback, "fallback");
-    addHistoryItem(value, fallback, currentLang === "en" ? "Local help" : "Ayuda local");
     revealResult();
   }
 }
@@ -632,7 +598,6 @@ async function captureAndRead() {
     updateModeLabel(text);
     setStatus(t("textDetected"));
     revealResult();
-    addHistoryItem(currentLang === "en" ? "Scan" : "Escaneo", text, "OCR");
     cameraModal.hidden = true;
     stopCamera();
     await resolveInput();
@@ -756,17 +721,6 @@ suggestionsContainer.addEventListener("click", (event) => {
   resolveInput();
 });
 
-toggleHistoryBtn.addEventListener("click", () => {
-  const isHidden = historyContainer.hasAttribute("hidden");
-  if (isHidden) {
-    historyContainer.removeAttribute("hidden");
-    toggleHistoryBtn.textContent = t("hide");
-  } else {
-    historyContainer.setAttribute("hidden", "");
-    toggleHistoryBtn.textContent = t("show");
-  }
-});
-
 keyboard.addEventListener("click", (event) => {
   const keyButton = event.target.closest(".kkc-key");
   if (!keyButton) {
@@ -793,3 +747,6 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
+
+
