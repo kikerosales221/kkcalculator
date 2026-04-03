@@ -101,10 +101,11 @@ const translations = {
     backendConsulting: "Consultando disponibilidad del backend.",
     backendUnavailable: "Backend IA no disponible.",
     backendPublicUnavailable: "No pude conectar con el backend publico de IA.",
-    backendConfigured: (model, remaining) => `IA lista. Modelo: ${model}. Quedan ${remaining} consultas hoy.`,
+    backendConfigured: (model, remaining) => `IA lista. Modelo: ${model}. Te quedan ${remaining} consultas hoy.`,
     backendAdmin: (model) => `IA lista. Modo admin activo. Modelo: ${model}.`,
     backendPublicLimit: (limit) => `Demo publica con limite diario de ${limit} consultas por usuario.`,
     backendAdminCopy: "Tu usuario no tiene limite diario activo.",
+    backendAdminStored: "Token admin detectado en este navegador.",
     backendQuota: (model) => `Backend conectado, pero OpenAI devolvio cuota agotada. Modelo: ${model}.`,
     backendQuotaCopy: "La IA esta configurada, pero la cuenta no tiene cuota disponible.",
     backendInvalid: (model) => `Backend conectado, pero la API key fue rechazada por OpenAI. Modelo: ${model}.`,
@@ -183,6 +184,7 @@ const translations = {
     backendAdmin: (model) => `AI ready. Admin mode active. Model: ${model}.`,
     backendPublicLimit: (limit) => `Public demo limit: ${limit} AI requests per user each day.`,
     backendAdminCopy: "Your user has no daily limit active.",
+    backendAdminStored: "Admin token detected in this browser.",
     backendQuota: (model) => `Backend is connected, but OpenAI reported exhausted quota. Model: ${model}.`,
     backendQuotaCopy: "AI is configured, but the account has no quota available.",
     backendInvalid: (model) => `Backend is connected, but the API key was rejected by OpenAI. Model: ${model}.`,
@@ -248,6 +250,24 @@ function buildAiHeaders() {
   return headers;
 }
 
+function buildHealthUrl() {
+  const url = new URL(AI_HEALTH_ENDPOINT);
+  if (ADMIN_TOKEN) {
+    url.searchParams.set(ADMIN_QUERY_PARAM, ADMIN_TOKEN);
+  }
+  return url.toString();
+}
+
+function buildAskPayload(prompt) {
+  const payload = { prompt, locale: currentLang };
+
+  if (ADMIN_TOKEN) {
+    payload.adminToken = ADMIN_TOKEN;
+  }
+
+  return payload;
+}
+
 function applyLanguage() {
   document.documentElement.lang = currentLang;
   eyebrow.textContent = t("eyebrow");
@@ -282,7 +302,7 @@ function applyLanguage() {
   }
 
   if (!statusText.textContent.trim()) {
-    setStatus(t("statusReady"));
+    setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
   }
 
   updateModeLabel(input.value);
@@ -451,7 +471,7 @@ async function resolveInput() {
     const response = await fetch(AI_ENDPOINT, {
       method: "POST",
       headers: buildAiHeaders(),
-      body: JSON.stringify({ prompt: value, locale: currentLang })
+      body: JSON.stringify(buildAskPayload(value))
     });
 
     const data = await response.json().catch(() => ({}));
@@ -686,9 +706,9 @@ clearBtn.addEventListener("click", () => {
 
 editAiBtn.addEventListener("click", () => {
   setResult(t("backendChecking"));
-  setStatus(t("backendConsulting"));
+  setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("backendConsulting"));
 
-  fetch(AI_HEALTH_ENDPOINT, { headers: ADMIN_TOKEN ? { "x-kkc-admin-token": ADMIN_TOKEN } : {} })
+  fetch(buildHealthUrl(), { headers: ADMIN_TOKEN ? { "x-kkc-admin-token": ADMIN_TOKEN } : {} })
     .then(async (response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -709,7 +729,7 @@ editAiBtn.addEventListener("click", () => {
           break;
         case "quota_exceeded":
           statusLine = t("backendQuota", data.model);
-          statusCopy = t("backendQuotaCopy");
+          statusCopy = data.adminBypassActive ? t("backendAdminCopy") : t("backendQuotaCopy");
           break;
         case "invalid_api_key":
           statusLine = t("backendInvalid", data.model);
@@ -723,6 +743,12 @@ editAiBtn.addEventListener("click", () => {
           statusLine = t("backendDegraded", data.model);
           statusCopy = t("backendDegradedCopy");
           break;
+      }
+
+      if (ADMIN_TOKEN && data.adminTokenProvided && !data.adminBypassActive) {
+        statusCopy = currentLang === "en"
+          ? "An admin token was sent, but it did not match the backend token."
+          : "Se envio un token admin, pero no coincide con el token del backend.";
       }
 
       setResult(statusLine);
@@ -771,5 +797,6 @@ window.addEventListener("beforeunload", stopCamera);
 optimizeMobileLayout();
 applyLanguage();
 setResult(t("resultEmpty"));
-setStatus(t("statusReady"));
+setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
+
