@@ -24,6 +24,13 @@ const captureBtn = document.getElementById("kkc-capture-btn");
 const closeCamBtn = document.getElementById("kkc-closecam-btn");
 const switchCamBtn = document.getElementById("kkc-switchcam-btn");
 const canvas = document.getElementById("kkc-canvas");
+const ocrModal = document.getElementById("kkc-ocr-modal");
+const ocrTitle = document.getElementById("kkc-ocr-title");
+const ocrCopy = document.getElementById("kkc-ocr-copy");
+const ocrText = document.getElementById("kkc-ocr-text");
+const ocrUseBtn = document.getElementById("kkc-ocr-use-btn");
+const ocrAskBtn = document.getElementById("kkc-ocr-ask-btn");
+const ocrCancelBtn = document.getElementById("kkc-ocr-cancel-btn");
 
 const AI_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/ask";
 const AI_HEALTH_ENDPOINT = "https://kkcalculator-backend.onrender.com/api/health";
@@ -111,7 +118,13 @@ const translations = {
     suggestionBullets: "En puntos",
     suggestionRewrite: "Reescribir",
     suggestionSteps: "Paso a paso",
-    suggestionExample: "Dar ejemplo"
+    suggestionExample: "Dar ejemplo",
+    ocrReviewTitle: "Revisar texto detectado",
+    ocrReviewCopy: "Edita el texto, deja solo la pregunta o el parrafo que te interesa y luego decide que hacer.",
+    ocrUse: "Usar texto",
+    ocrAsk: "Preguntar",
+    ocrCancel: "Cancelar",
+    ocrReviewReady: "Texto detectado. Revisa y ajusta antes de enviarlo."
   },
   en: {
     langButton: "ES",
@@ -192,7 +205,13 @@ const translations = {
     suggestionBullets: "Bullet list",
     suggestionRewrite: "Rewrite",
     suggestionSteps: "Show steps",
-    suggestionExample: "Give example"
+    suggestionExample: "Give example",
+    ocrReviewTitle: "Review detected text",
+    ocrReviewCopy: "Edit the text, keep only the question or paragraph you want, and then choose what to do.",
+    ocrUse: "Use text",
+    ocrAsk: "Ask AI",
+    ocrCancel: "Cancel",
+    ocrReviewReady: "Text detected. Review and adjust it before sending."
   }
 };
 
@@ -747,6 +766,13 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
+
+
+
+
+
+
 
 
 
