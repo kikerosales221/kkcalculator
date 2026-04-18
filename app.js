@@ -422,7 +422,7 @@ function splitTextIntoBulletParts(text) {
   }
 
   let parts = cleaned
-    .split(/[.!?;]|,|\s+y\s+|\s+and\s+/i)
+    .split(/[.!?;]|,|\s+and\s+/i)
     .map((part) => part.trim())
     .filter(Boolean)
     .slice(0, 3);
@@ -430,7 +430,7 @@ function splitTextIntoBulletParts(text) {
   if (parts.length < 2) {
     parts = cleaned
       .replace(/\bEjemplo:\s*/i, ". Ejemplo: ")
-      .split(/[.!?;]|,|\s+y\s+/i)
+      .split(/[.!?;]|,/i)
       .map((part) => part.trim())
       .filter(Boolean)
       .slice(0, 3);
@@ -849,6 +849,7 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
 
 
 
