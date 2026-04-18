@@ -416,25 +416,21 @@ function buildSuggestionPrompt(action) {
 }
 
 function splitTextIntoBulletParts(text) {
-  const cleaned = String(text || "").replace(/\s+/g, " ").trim();
+  const cleaned = String(text || "")
+    .replace(/^\s*-\s*/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
   if (!cleaned) {
     return [];
   }
 
-  let parts = cleaned
-    .split(/[.!?;]|,|\s+and\s+/i)
+  const sentenceReady = cleaned.replace(/\s+(Ejemplo:)/i, ". $1");
+  const parts = sentenceReady
+    .split(/[.!?;]+\s*/)
     .map((part) => part.trim())
     .filter(Boolean)
     .slice(0, 3);
-
-  if (parts.length < 2) {
-    parts = cleaned
-      .replace(/\bEjemplo:\s*/i, ". Ejemplo: ")
-      .split(/[.!?;]|,/i)
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .slice(0, 3);
-  }
 
   return parts.length ? parts : [cleaned];
 }
@@ -849,6 +845,7 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
 
 
 
