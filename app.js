@@ -382,8 +382,13 @@ function renderSuggestions() {
   suggestionsContainer.hidden = defs.length === 0;
 }
 
+function isSuggestionInstruction(query) {
+  return /^(explain this|explica esto|make this answer|haz esta respuesta|turn this answer|convierte esta respuesta|rewrite this|reescribe esto|show the steps|muestra los pasos|give one simple|da un ejemplo)/i.test(String(query || "").trim());
+}
+
 function rememberInteraction(query, answer, source) {
-  lastInteraction = { query, answer, source };
+  const baseQuery = isSuggestionInstruction(query) ? lastInteraction?.baseQuery || "" : query;
+  lastInteraction = { query, answer, source, baseQuery };
   renderSuggestions();
 }
 
@@ -442,9 +447,12 @@ function applyLocalSuggestion(action, prompt) {
   const parts = splitTextIntoBulletParts(lastInteraction.answer);
   const transformed = parts.map((part) => `- ${part}`).join("\n");
 
+  const cleanQuery = lastInteraction.baseQuery || "";
+  input.value = cleanQuery;
+  updateModeLabel(cleanQuery);
   setResult(transformed);
   setStatus(currentLang === "en" ? "Answer converted into bullet points." : "Respuesta convertida en puntos.");
-  rememberInteraction(lastInteraction.query, transformed, "ai");
+  rememberInteraction(cleanQuery, transformed, "ai");
   revealResult();
   return true;
 }
@@ -841,6 +849,7 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
 
 
 
