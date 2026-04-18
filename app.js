@@ -1,4 +1,4 @@
-"use strict";
+ï»¿"use strict";
 
 const input = document.getElementById("kkc-input");
 const result = document.getElementById("kkc-result");
@@ -410,6 +410,45 @@ function buildSuggestionPrompt(action) {
   }
 }
 
+function splitTextIntoBulletParts(text) {
+  const cleaned = String(text || "").replace(/\s+/g, " ").trim();
+  if (!cleaned) {
+    return [];
+  }
+
+  let parts = cleaned
+    .split(/[.!?;]|,|\s+y\s+|\s+and\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (parts.length < 2) {
+    parts = cleaned
+      .replace(/\bEjemplo:\s*/i, ". Ejemplo: ")
+      .split(/[.!?;]|,|\s+y\s+/i)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+  }
+
+  return parts.length ? parts : [cleaned];
+}
+
+function applyLocalSuggestion(action, prompt) {
+  if (!lastInteraction || action !== "bullets") {
+    return false;
+  }
+
+  const parts = splitTextIntoBulletParts(lastInteraction.answer);
+  const transformed = parts.map((part) => `- ${part}`).join("\n");
+
+  setResult(transformed);
+  setStatus(currentLang === "en" ? "Answer converted into bullet points." : "Respuesta convertida en puntos.");
+  rememberInteraction(lastInteraction.query, transformed, "ai");
+  revealResult();
+  return true;
+}
+
 function revealResult() {
   result.scrollIntoView({ behavior: "smooth", block: "center" });
 }
@@ -553,7 +592,7 @@ function stopCamera() {
 }
 
 function normalizeOcrText(rawText) {
-  return rawText.replace(/[\r\n]+/g, " ").replace(/[|]/g, "/").replace(/[xX×]/g, "*").replace(/[–—]/g, "-").replace(/[÷]/g, "/").replace(/\s*([+\-*/=()%^])\s*/g, " $1 ").replace(/\s+/g, " ").trim();
+  return rawText.replace(/[\r\n]+/g, " ").replace(/[|]/g, "/").replace(/[xXÃ—]/g, "*").replace(/[â€“â€”]/g, "-").replace(/[Ã·]/g, "/").replace(/\s*([+\-*/=()%^])\s*/g, " $1 ").replace(/\s+/g, " ").trim();
 }
 
 function createOcrVariants(sourceCanvas) {
@@ -582,7 +621,7 @@ async function readMathFromCanvas(sourceCanvas) {
   const variants = createOcrVariants(sourceCanvas);
   let bestText = "";
   for (const imageData of variants) {
-    const ocr = await Tesseract.recognize(imageData, "spa+eng", { tessedit_pageseg_mode: "6", tessedit_char_whitelist: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=().,%^ xX÷×v" });
+    const ocr = await Tesseract.recognize(imageData, "spa+eng", { tessedit_pageseg_mode: "6", tessedit_char_whitelist: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=().,%^ xXÃ·Ã—v" });
     const text = normalizeOcrText(ocr.data.text || "");
     if (text.length > bestText.length) {
       bestText = text;
@@ -768,6 +807,9 @@ suggestionsContainer.addEventListener("click", (event) => {
   if (!nextPrompt) {
     return;
   }
+  if (applyLocalSuggestion(button.dataset.action, nextPrompt)) {
+    return;
+  }
   input.value = nextPrompt;
   updateModeLabel(nextPrompt);
   resolveInput();
@@ -799,6 +841,8 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
+
 
 
 
