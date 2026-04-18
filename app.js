@@ -430,6 +430,15 @@ function splitTextIntoBulletParts(text) {
     .split(/[.!?;]+\s*/)
     .map((part) => part.trim())
     .filter(Boolean)
+    .reduce((items, part) => {
+      const previous = items[items.length - 1] || "";
+      if (/^tu\s+ganancia\s+es\b/i.test(part) && /^Ejemplo:/i.test(previous)) {
+        items[items.length - 1] = `${previous}, ${part}`;
+      } else {
+        items.push(part);
+      }
+      return items;
+    }, [])
     .slice(0, 3);
 
   return parts.length ? parts : [cleaned];
@@ -845,6 +854,7 @@ setResult(t("resultEmpty"));
 setStatus(ADMIN_TOKEN ? t("backendAdminStored") : t("statusReady"));
 updateModeLabel("");
 clearSuggestions();
+
 
 
 
